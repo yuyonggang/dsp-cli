@@ -1,0 +1,29 @@
+{
+  "name": "datasphere-cli-skills",
+  "version": "1.0.0",
+  "description": "SAP Datasphere CLI Skills - Create Datasphere objects programmatically",
+  "type": "module",
+  "scripts": {
+    "login": "datasphere login",
+    "logout": "datasphere logout",
+    "version": "datasphere --version",
+    "help": "datasphere --help"
+  },
+  "keywords": [
+    "sap",
+    "datasphere",
+    "cli",
+    "skills",
+    "automation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sap/datasphere-cli": "^2026.6.0",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  }
+}

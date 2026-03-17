@@ -1,0 +1,20 @@
+node_modules/
+.env
+secrets.json
+*.log
+.DS_Store
+cache/
+.datasphere-cli/
+
+# Blog posts and internal documents (not for public repo)
+BLOG.md
+BLOG_ZH.md
+BLOG_SIMPLE.md
+SECURITY.md
+TEST_SUMMARY.md
+
+# Test scripts with hardcoded credentials (moved to private directory)
+tests-private/
+
+# Output files
+output/
