@@ -62,7 +62,7 @@ Creates a local table in Datasphere.
 
 **Syntax:**
 ```bash
-/create-local-table --name TABLE_NAME --columns COLUMN_DEFINITIONS [--space SPACE_ID] [--label LABEL]
+/create-local-table --name TABLE_NAME --columns COLUMN_DEFINITIONS [--space SPACE_ID] [--label LABEL] [--dimension]
 ```
 
 **Column Format:** `NAME:TYPE:LENGTH[:SCALE][:key][:required]`
@@ -200,7 +200,8 @@ dsp-cli/
 │   └── create-transformation-flow/
 ├── .env.example
 ├── package.json
-└── README.md
+├── README.md
+└── README_CN.md
 ```
 
 Each skill directory contains:
@@ -224,6 +225,15 @@ Skills generate artifacts in CSN (Core Schema Notation) format, the JSON represe
 2. Reading the artifact structure via CLI: `datasphere objects views read --name ARTIFACT_NAME`
 3. Analyzing the JSON structure to identify required fields and patterns
 4. Generating new artifacts based on these templates
+
+### Graphical View uiModel
+
+For graphical views with dimension associations, the `editorSettings.uiModel` structure requires careful handling:
+
+- **Data structures** (`DimensionNode`, `Association`, `ElementMapping`) must be generated for each dimension
+- **Diagram symbols** (`EntitySymbol`, `AssociationSymbol`) for dimensions should **NOT** be generated
+- SAP Datasphere auto-generates visual symbols when the view is opened in the graphical editor
+- Generating partial symbols (e.g., `EntitySymbol` without `AssociationSymbol`) causes display issues
 
 ## Limitations
 
