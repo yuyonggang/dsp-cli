@@ -44,6 +44,7 @@ function parseArgs(args) {
     space: "SAP_SCT",
     label: null,
     columns: null,
+    dimension: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -59,6 +60,8 @@ function parseArgs(args) {
     } else if (args[i] === "--columns" && args[i + 1]) {
       params.columns = args[i + 1];
       i++;
+    } else if (args[i] === "--dimension") {
+      params.dimension = true;
     }
   }
 
@@ -112,9 +115,15 @@ function parseColumns(columnsStr) {
   columnDefs.forEach((colDef) => {
     const parts = colDef.trim().split(":");
     const name = parts[0];
-    const type = parts[1] || "cds.String";
-    const length = parts[2] ? parseInt(parts[2]) : undefined;
-    const precision = parts[3] ? parseInt(parts[3]) : undefined;
+    let type = parts[1] || "cds.String";
+
+    // Add cds. prefix if not present
+    if (type && !type.startsWith("cds.")) {
+      type = `cds.${type}`;
+    }
+
+    const param1 = parts[2] ? parseInt(parts[2]) : undefined;
+    const param2 = parts[3] ? parseInt(parts[3]) : undefined;
     const hasKey = parts.includes("key");
     const hasRequired = parts.includes("required");
 
@@ -123,8 +132,16 @@ function parseColumns(columnsStr) {
       "type": type,
     };
 
-    if (length) element.length = length;
-    if (precision) element.precision = precision;
+    // For Decimal type: precision and scale
+    if (type === "cds.Decimal") {
+      if (param1) element.precision = param1;
+      if (param2) element.scale = param2;
+    } else {
+      // For String and other types: length
+      if (param1) element.length = param1;
+      if (param2) element.precision = param2; // For legacy compatibility
+    }
+
     if (hasKey) element.key = true;
     if (hasRequired || hasKey) element.notNull = true;
 
@@ -180,12 +197,30 @@ async function createLocalTable(params) {
     }
   };
 
+  // Add dimension annotations if --dimension flag is set
+  if (params.dimension) {
+    tableDefinition.definitions[params.name]["@ObjectModel.supportedCapabilities"] = [
+      { "#": "ANALYTICAL_DIMENSION" }
+    ];
+    tableDefinition.definitions[params.name]["@ObjectModel.modelingPattern"] = {
+      "#": "ANALYTICAL_DIMENSION"
+    };
+
+    // Mark key columns as dimensions
+    Object.keys(elements).forEach(colName => {
+      if (elements[colName].key) {
+        elements[colName]["@Analytics.dimension"] = true;
+      }
+    });
+  }
+
   console.log("📝 Table Definition:");
   console.log(JSON.stringify(tableDefinition, null, 2));
   console.log();
 
   // Save to temp file
-  const tempFile = `/tmp/table-${params.name}.json`;
+  const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
+  const tempFile = `${tempDir}/table-${params.name}.json`;
   await fs.writeFile(tempFile, JSON.stringify(tableDefinition, null, 2));
 
   // Create table
@@ -231,14 +266,26 @@ async function main() {
 
   if (!params.name) {
     console.error("❌ Error: --name parameter is required");
-    console.log("\nUsage: node create-local-table.js --name TABLE_NAME [--space SPACE_ID] [--label LABEL] [--columns COLUMN_DEFS]");
+    console.log("\nUsage: node create-local-table.js --name TABLE_NAME [--space SPACE_ID] [--label LABEL] [--columns COLUMN_DEFS] [--dimension]");
+    console.log("\nOptions:");
+    console.log("  --name          Table name (required)");
+    console.log("  --space         Space ID (default: SAP_SCT)");
+    console.log("  --label         User-friendly label");
+    console.log("  --columns       Column definitions: NAME:TYPE:LENGTH[:key]");
+    console.log("  --dimension     Mark as analytical dimension table");
+    console.log("\nExamples:");
+    console.log("  # Create regular table (for fact data):");
+    console.log("  node create-local-table.js --name ORDERS --columns ORDER_ID:String:10:key,CUSTOMER_ID:String:10,AMOUNT:Decimal:15:2");
+    console.log("\n  # Create dimension table:");
+    console.log("  node create-local-table.js --name DIM_CUSTOMER --columns ID:String:10:key,NAME:String:100 --dimension");
     process.exit(1);
   }
 
   await createLocalTable(params);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}`) {
+// Run main if this is the entry point
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"))) {
   main().catch((error) => {
     console.error("Fatal error:", error);
     process.exit(1);

@@ -20,6 +20,9 @@ Creates a view in the specified Datasphere space using CDS (Core Data Services) 
 - `--label` (optional): User-friendly label for the view
 - `--columns` (optional): Comma-separated list of columns to select (default: all columns from source)
   - Format: `COLUMN1,COLUMN2,COLUMN3`
+- `--dimensions` (optional): Dimension associations in format `fkColumn:dimTable:joinKey`
+  - Use **semicolon** (`;`) to separate multiple dimensions
+  - Format: `CUSTOMER_ID:DIM_CUSTOMER:ID;PRODUCT_ID:DIM_PRODUCT:ID`
 - `--where` (optional): WHERE clause filter condition
 
 ## Examples

@@ -341,7 +341,8 @@ async function createReplicationFlow(params) {
   console.log();
 
   // Save to temp file
-  const tempFile = `/tmp/replication-flow-${params.name}.json`;
+  const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
+  const tempFile = `${tempDir}/replication-flow-${params.name}.json`;
   await fs.writeFile(tempFile, JSON.stringify(flowDefinition, null, 2));
   console.log(`💾 Saved definition to: ${tempFile}\n`);
 
@@ -422,7 +423,8 @@ async function main() {
   await createReplicationFlow(params);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}`) {
+// Run main if this is the entry point
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"))) {
   main().catch((error) => {
     console.error("Fatal error:", error);
     process.exit(1);

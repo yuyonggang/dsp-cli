@@ -203,7 +203,8 @@ async function createTransformationFlow(params) {
   console.log();
 
   // Save to temp file
-  const tempFile = `/tmp/transformation-flow-${params.name}.json`;
+  const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
+  const tempFile = `${tempDir}/transformation-flow-${params.name}.json`;
   await fs.writeFile(tempFile, JSON.stringify(flowDefinition, null, 2));
 
   // Create transformation flow
@@ -278,7 +279,8 @@ async function main() {
   await createTransformationFlow(params);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}`) {
+// Run main if this is the entry point
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"))) {
   main().catch((error) => {
     console.error("Fatal error:", error);
     process.exit(1);
