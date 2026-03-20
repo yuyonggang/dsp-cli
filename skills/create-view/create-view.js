@@ -1,6 +1,9 @@
 /**
  * Skill Implementation: create-view
  * Creates a View in SAP Datasphere
+ *
+ * FIX: Do NOT generate EntitySymbol/AssociationSymbol for dimensions
+ *      Let SAP Datasphere auto-generate the visual symbols
  */
 
 import { getCommands } from "@sap/datasphere-cli";
@@ -46,7 +49,7 @@ function parseArgs(args) {
     label: null,
     columns: null,
     where: null,
-    dimensions: null,  // New: FK_COL:DIM_TABLE:JOIN_KEY format
+    dimensions: null,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -82,7 +85,6 @@ function parseArgs(args) {
  */
 async function getSourceStructure(commands, space, sourceName) {
   try {
-    // Try to read as local table first
     const table = await commands["objects local-tables read"]({
       "--host": HOST,
       "--space": space,
@@ -90,7 +92,6 @@ async function getSourceStructure(commands, space, sourceName) {
     });
     return table.definitions[sourceName].elements;
   } catch (error) {
-    // If not a table, try as view
     try {
       const view = await commands["objects views read"]({
         "--host": HOST,
@@ -106,8 +107,6 @@ async function getSourceStructure(commands, space, sourceName) {
 
 /**
  * Parse dimensions parameter
- * Format: "FK_COL:DIM_TABLE:JOIN_KEY;..."
- * Example: "CUSTOMER_ID:DIM_CUSTOMER:ID"
  */
 function parseDimensions(dimensionsStr) {
   if (!dimensionsStr) return [];
@@ -119,9 +118,9 @@ function parseDimensions(dimensionsStr) {
     const parts = dimDef.trim().split(":");
     if (parts.length >= 3) {
       dimensions.push({
-        fkColumn: parts[0],        // Foreign key column in source
-        dimensionTable: parts[1],   // Dimension table name
-        joinKey: parts[2],          // Key column in dimension table
+        fkColumn: parts[0],
+        dimensionTable: parts[1],
+        joinKey: parts[2],
       });
     }
   });
@@ -164,7 +163,7 @@ function generateUUID() {
 }
 
 /**
- * Check if a field name suggests it's a measure based on common naming patterns
+ * Check if a field name suggests it's a measure
  */
 function isMeasureField(fieldName) {
   const measureKeywords = [
@@ -179,8 +178,10 @@ function isMeasureField(fieldName) {
 
 /**
  * Generate uiModel for Graphical View
- * This is a synchronous function that builds the UI model structure
- * Note: Dimension elements need to be passed in from the async context
+ *
+ * KEY FIX: Do NOT generate EntitySymbol/AssociationSymbol for dimensions!
+ * Only generate the data structures (DimensionNode, Association, ElementMapping)
+ * Let SAP Datasphere auto-generate the visual symbols.
  */
 function generateUIModel(params, sourceElements, dimensions, dimensionElementsMap) {
   const modelId = generateUUID();
@@ -189,6 +190,7 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
   const outputSymbolId = generateUUID();
   const sourceSymbolId = generateUUID();
   const diagramId = generateUUID();
+  const sourceToOutputAssocSymbolId = generateUUID();
 
   const contents = {
     [modelId]: {
@@ -237,17 +239,19 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       elements: {},
       successorNode: outputId
     },
+    // Diagram: ONLY source entity and output symbols, NO dimension symbols!
     [diagramId]: {
       classDefinition: "sap.cdw.querybuilder.ui.Diagram",
       symbols: {
         [outputSymbolId]: {},
-        [sourceSymbolId]: { name: "Entity Symbol 1" }
+        [sourceSymbolId]: { name: "Entity Symbol 1" },
+        [sourceToOutputAssocSymbolId]: {}
       }
     },
     [outputSymbolId]: {
       classDefinition: "sap.cdw.querybuilder.ui.OutputSymbol",
       x: 47,
-      y: -20,
+      y: 25,
       width: 140,
       height: 40,
       object: outputId
@@ -256,32 +260,39 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       classDefinition: "sap.cdw.querybuilder.ui.EntitySymbol",
       name: "Entity Symbol 1",
       x: -163,
-      y: -20,
+      y: 25,
       width: 160,
       displayName: "Entity Symbol 1",
       object: sourceEntityId
+    },
+    [sourceToOutputAssocSymbolId]: {
+      classDefinition: "sap.cdw.querybuilder.ui.AssociationSymbol",
+      points: "-3,45 47,45",
+      contentOffsetX: 5,
+      contentOffsetY: 5,
+      sourceSymbol: sourceSymbolId,
+      targetSymbol: outputSymbolId
     }
   };
 
-  // Add dimension nodes if any
-  const dimNodes = {};
-  const dimSymbols = {};
-  const dimNodeInfoMap = {}; // Map dimension table name to its node and element IDs
+  // Store dimension node info for association mappings
+  const dimNodeInfoMap = {};
 
-  dimensions.forEach((dim, idx) => {
+  // Add dimension nodes (data structure only, NO diagram symbols!)
+  dimensions.forEach((dim) => {
     const dimNodeId = generateUUID();
-    const dimSymbolId = generateUUID();
 
+    // Add to model nodes
     contents[modelId].nodes[dimNodeId] = { name: dim.dimensionTable };
 
-    // Get dimension elements from the map passed in
+    // Get dimension elements
     const dimElements = dimensionElementsMap[dim.dimensionTable] || {};
     const dimElementIds = {};
 
     // Generate element definitions for dimension table
     Object.keys(dimElements).forEach((dimColName) => {
       const dimElement = dimElements[dimColName];
-      if (dimElement.type === "cds.Association") return; // Skip associations in dimension
+      if (dimElement.type === "cds.Association") return;
 
       const dimElemId = generateUUID();
       dimElementIds[dimColName] = dimElemId;
@@ -305,7 +316,8 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       };
     });
 
-    dimNodes[dimNodeId] = {
+    // Create DimensionNode
+    contents[dimNodeId] = {
       classDefinition: "sap.cdw.querybuilder.DimensionNode",
       name: dim.dimensionTable,
       label: dim.dimensionTable,
@@ -322,34 +334,24 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       )
     };
 
-    // Store mapping for later use in associations
+    // Store for later use
     dimNodeInfoMap[dim.dimensionTable] = {
       nodeId: dimNodeId,
       elementIds: dimElementIds
     };
 
-    dimSymbols[dimSymbolId] = {
-      classDefinition: "sap.cdw.querybuilder.ui.EntitySymbol",
-      name: `Dimension Symbol ${idx + 1}`,
-      x: -163,
-      y: 60 + idx * 80,
-      width: 160,
-      displayName: `Dimension Symbol ${idx + 1}`,
-      object: dimNodeId
-    };
+    // NOTE: We do NOT add EntitySymbol or AssociationSymbol for dimensions!
+    // SAP Datasphere will auto-generate them when the view is opened.
   });
 
-  Object.assign(contents, dimNodes);
-  Object.assign(contents[diagramId].symbols, dimSymbols);
-
-  // Build set of FK columns from dimensions
+  // Build set of FK columns
   const fkColumns = new Set(dimensions.map(d => d.fkColumn));
 
   // Add elements mapping
   let indexOrder = 0;
   Object.keys(sourceElements).forEach(colName => {
     const element = sourceElements[colName];
-    if (element.type === "cds.Association") return; // Skip associations
+    if (element.type === "cds.Association") return;
 
     const sourceElemId = generateUUID();
     const outputElemId = generateUUID();
@@ -377,11 +379,6 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       contents[sourceElemId].isNotNull = true;
     }
 
-    // Check if measure based on:
-    // 1. Numeric type (Integer, Decimal, Double)
-    // 2. Not a key field
-    // 3. Not a FK column
-    // 4. Field name suggests it's a measure (AMOUNT, QUANTITY, etc.)
     const isNumeric = element.type === "cds.Integer" || element.type === "cds.Decimal" || element.type === "cds.Double";
     const isMeasure = isNumeric && !element.key && !fkColumns.has(colName) && isMeasureField(colName);
     if (isMeasure) {
@@ -418,22 +415,22 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       contents[outputElemId].dataType = element.type;
     }
 
-    // Add foreign key reference if this is a dimension FK
+    // Add foreign key reference
     dimensions.forEach(dim => {
       if (colName === dim.fkColumn) {
-        contents[outputElemId].foreignKey = `_${dim.dimensionTable.replace(/^(LT_|DIM_)/i, "").substring(0, 10).toUpperCase()}`;
+        const dimTableShort = dim.dimensionTable.replace(/^(LT_|DIM_)/i, "").substring(0, 10).toUpperCase();
+        contents[outputElemId].foreignKey = `_${dimTableShort}`;
       }
     });
   });
 
-  // Add association mappings
+  // Add associations
   dimensions.forEach(dim => {
     const assocId = generateUUID();
     const mappingId = generateUUID();
     const dimTableShort = dim.dimensionTable.replace(/^(LT_|DIM_)/i, "").substring(0, 10).toUpperCase();
     const assocName = `_${dimTableShort}`;
 
-    // Get dimension node info
     const dimInfo = dimNodeInfoMap[dim.dimensionTable];
     if (!dimInfo) {
       console.warn(`Warning: No dimension info found for ${dim.dimensionTable}`);
@@ -453,15 +450,8 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
     // Find join key element ID in dimension
     const joinKeyElemId = dimElementIds[dim.joinKey];
 
-    if (!fkElemId) {
-      console.warn(`Warning: Could not find FK element ID for ${dim.fkColumn} in output`);
-      console.warn(`Available output elements:`, Object.keys(contents[outputId].elements));
-      return;
-    }
-
-    if (!joinKeyElemId) {
-      console.warn(`Warning: Could not find join key element ID for ${dim.joinKey} in dimension ${dim.dimensionTable}`);
-      console.warn(`Available dimension element IDs:`, Object.keys(dimElementIds));
+    if (!fkElemId || !joinKeyElemId) {
+      console.warn(`Warning: Could not find element IDs for ${dim.fkColumn} -> ${dim.joinKey}`);
       return;
     }
 
@@ -469,7 +459,7 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
     contents[modelId].associations[assocId] = { name: assocName };
     contents[outputId].associations[assocId] = { name: assocName };
 
-    // Create association definition
+    // Create association
     contents[assocId] = {
       classDefinition: "sap.cdw.querybuilder.Association",
       name: assocName,
@@ -481,7 +471,7 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
       }
     };
 
-    // Create element mapping with correct target
+    // Create element mapping
     contents[mappingId] = {
       classDefinition: "sap.cdw.commonmodel.ElementMapping",
       source: fkElemId,
@@ -498,17 +488,13 @@ function generateUIModel(params, sourceElements, dimensions, dimensionElementsMa
 async function createView(params) {
   console.log(`🚀 Creating View: ${params.name} from ${params.source} in space ${params.space}\n`);
 
-  // Authenticate
   const commands = await authenticate();
 
-  // Get source structure
   console.log(`📋 Reading source structure: ${params.source}`);
   const sourceElements = await getSourceStructure(commands, params.space, params.source);
 
-  // Parse dimensions
   const dimensions = parseDimensions(params.dimensions);
 
-  // Read dimension table structures (needed for uiModel generation)
   const dimensionElementsMap = {};
   for (const dim of dimensions) {
     console.log(`📋 Reading dimension structure: ${dim.dimensionTable}`);
@@ -521,15 +507,11 @@ async function createView(params) {
     }
   }
 
-  // Determine columns to select
   let columnsToSelect;
   let viewElements = {};
 
   if (params.columns) {
-    // Use specified columns
     columnsToSelect = params.columns.split(",").map(c => c.trim());
-
-    // Build view elements from selected columns
     columnsToSelect.forEach(colName => {
       if (sourceElements[colName]) {
         viewElements[colName] = { ...sourceElements[colName] };
@@ -538,7 +520,6 @@ async function createView(params) {
       }
     });
   } else {
-    // Use all columns from source (except associations)
     Object.keys(sourceElements).forEach(colName => {
       if (sourceElements[colName].type !== "cds.Association") {
         viewElements[colName] = { ...sourceElements[colName] };
@@ -547,13 +528,11 @@ async function createView(params) {
     columnsToSelect = Object.keys(viewElements);
   }
 
-  // Add measure annotations to CSN elements
   const fkColumns = new Set(dimensions.map(d => d.fkColumn));
   Object.keys(viewElements).forEach(colName => {
     const element = viewElements[colName];
     if (element.type === "cds.Association") return;
 
-    // Check if this is a measure based on: numeric type, not key, not FK, field name pattern
     const isNumeric = element.type === "cds.Integer" || element.type === "cds.Decimal" || element.type === "cds.Double";
     const isMeasure = isNumeric && !element.key && !fkColumns.has(colName) && isMeasureField(colName);
 
@@ -563,33 +542,26 @@ async function createView(params) {
     }
   });
 
-  // Build SELECT columns
   const selectColumns = columnsToSelect.map(col => {
     const column = { ref: [col] };
-    // Mark key columns
     if (viewElements[col] && viewElements[col].key) {
       column.key = true;
     }
     return column;
   });
 
-  // Build mixin for associations (if any)
   const mixinAssociations = {};
 
-  // Add associations for dimensions
   dimensions.forEach(dim => {
-    // Create association name (simple format: _DIM_TABLE without counter)
     const dimTableShort = dim.dimensionTable.replace(/^(LT_|DIM_)/i, "").substring(0, 10).toUpperCase();
     const assocName = `_${dimTableShort}`;
 
-    // Add foreign key annotation to FK column
     if (viewElements[dim.fkColumn]) {
       viewElements[dim.fkColumn]["@ObjectModel.foreignKey.association"] = {
         "=": assocName
       };
     }
 
-    // Add association element
     viewElements[assocName] = {
       "type": "cds.Association",
       "@EndUserText.label": `${params.name} to ${dim.dimensionTable}`,
@@ -601,10 +573,8 @@ async function createView(params) {
       "target": dim.dimensionTable
     };
 
-    // Add to select columns
     selectColumns.push({ "ref": [assocName] });
 
-    // Add to mixin (using $projection)
     mixinAssociations[assocName] = {
       "type": "cds.Association",
       "@EndUserText.label": `${params.name} to ${dim.dimensionTable}`,
@@ -617,7 +587,6 @@ async function createView(params) {
     };
   });
 
-  // Build SELECT query
   const selectQuery = {
     SELECT: {
       from: {
@@ -627,30 +596,23 @@ async function createView(params) {
     }
   };
 
-  // Add mixin if there are associations
   if (Object.keys(mixinAssociations).length > 0) {
     selectQuery.SELECT.mixin = mixinAssociations;
   }
 
-  // Add WHERE clause if provided
   if (params.where) {
     selectQuery.SELECT.where = [params.where];
   }
 
-  // Determine modeling pattern based on source
   let modelingPattern = null;
   let supportedCapabilities = null;
 
-  // Check if source or view has measure fields (numeric types that could be measures)
   const hasMeasures = Object.values(viewElements).some(el => {
     if (el.type === "cds.Association") return false;
-    // Check for explicit measure annotations
     if (el["@AnalyticsDetails.measureType"] || el["@Aggregation.default"]) return true;
-    // Check for numeric types that are typically measures
     return el.type === "cds.Integer" || el.type === "cds.Decimal" || el.type === "cds.Double";
   });
 
-  // If view has dimensions (associations), it should be marked as ANALYTICAL_FACT
   const hasDimensions = dimensions.length > 0;
 
   if (hasMeasures || hasDimensions) {
@@ -658,7 +620,6 @@ async function createView(params) {
     supportedCapabilities = [{ "#": "DATA_STRUCTURE" }];
   }
 
-  // Generate view definition
   const viewDefinition = {
     "definitions": {
       [params.name]: {
@@ -671,13 +632,11 @@ async function createView(params) {
     }
   };
 
-  // Add modeling pattern if determined
   if (modelingPattern) {
     viewDefinition.definitions[params.name]["@ObjectModel.modelingPattern"] = modelingPattern;
     viewDefinition.definitions[params.name]["@ObjectModel.supportedCapabilities"] = supportedCapabilities;
   }
 
-  // Add editorSettings for Graphical View
   viewDefinition.editorSettings = {
     [params.name]: {
       editor: {
@@ -692,12 +651,10 @@ async function createView(params) {
   console.log(JSON.stringify(viewDefinition, null, 2));
   console.log();
 
-  // Save to temp file
   const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
   const tempFile = `${tempDir}/view-${params.name}.json`;
   await fs.writeFile(tempFile, JSON.stringify(viewDefinition, null, 2));
 
-  // Create view
   try {
     const result = await commands["objects views create"]({
       "--host": HOST,
@@ -709,7 +666,6 @@ async function createView(params) {
     console.log(JSON.stringify(result, null, 2));
     console.log();
 
-    // Verify
     const readResult = await commands["objects views read"]({
       "--host": HOST,
       "--space": params.space,
@@ -747,24 +703,17 @@ async function main() {
     console.log("  --columns       Comma-separated column list");
     console.log("  --where         WHERE condition");
     console.log("  --dimensions    Dimension associations: FK_COL:DIM_TABLE:JOIN_KEY;...");
-    console.log("\nExamples:");
-    console.log("  # Simple view:");
-    console.log("  node create-view.js --name ORDERS_VW --source LT_ORDERS");
-    console.log("\n  # View with association to dimension:");
-    console.log("  node create-view.js --name ORDERS_VW --source LT_ORDERS --dimensions \"CUSTOMER_ID:DIM_CUSTOMER:ID\"");
     process.exit(1);
   }
 
   if (!params.source) {
     console.error("❌ Error: --source parameter is required");
-    console.log("\nUsage: node create-view.js --name VIEW_NAME --source SOURCE_TABLE [OPTIONS]");
     process.exit(1);
   }
 
   await createView(params);
 }
 
-// Run main if this is the entry point
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"))) {
   main().catch((error) => {
     console.error("Fatal error:", error);
