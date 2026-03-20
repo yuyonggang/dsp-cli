@@ -34,6 +34,7 @@ Creates a table with default columns: ID, NAME, DESCRIPTION, AMOUNT, CREATED_DAT
 ```
 /create-local-table --name PRODUCT_TABLE --space SAP_SCT --columns "PRODUCT_ID:cds.String:10:key:required,PRODUCT_NAME:cds.String:100:required,PRICE:cds.Decimal:15:2,STOCK:cds.Integer"
 ```
+**Note**: For Decimal type with precision and scale, use **colon** (`:`) not comma - e.g., `15:2` means precision 15, scale 2
 
 ### Example 3: With custom label
 ```

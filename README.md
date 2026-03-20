@@ -65,11 +65,18 @@ Creates a local table in Datasphere.
 /create-local-table --name TABLE_NAME --columns COLUMN_DEFINITIONS [--space SPACE_ID] [--label LABEL]
 ```
 
-**Column Format:** `NAME:TYPE:LENGTH[:key]`
+**Column Format:** `NAME:TYPE:LENGTH[:SCALE][:key][:required]`
 
 **Example:**
 ```bash
+# Simple table
 /create-local-table --name CUSTOMER --columns ID:String:10:key,NAME:String:100,EMAIL:String:100
+
+# With Decimal (use colon for precision:scale, e.g., 15:2)
+/create-local-table --name SALES --columns ORDER_ID:String:10:key,AMOUNT:Decimal:15:2:required
+
+# Dimension table
+/create-local-table --name DIM_CUSTOMER --columns ID:String:10:key,NAME:String:100 --dimension
 ```
 
 **Supported Types:** `String`, `Integer`, `Decimal`, `Date`, `DateTime`, `Boolean`
@@ -78,16 +85,20 @@ Creates a local table in Datasphere.
 
 ### create-view
 
-Creates a view based on an existing table or view.
+Creates a view based on an existing table or view. Supports creating graphical views with dimension associations.
 
 **Syntax:**
 ```bash
-/create-view --name VIEW_NAME --source SOURCE_NAME [--columns COLUMNS] [--space SPACE_ID] [--label LABEL]
+/create-view --name VIEW_NAME --source SOURCE_NAME [--columns COLUMNS] [--dimensions DIMENSIONS] [--space SPACE_ID] [--label LABEL]
 ```
 
 **Example:**
 ```bash
+# Simple view
 /create-view --name V_CUSTOMER --source CUSTOMER --columns ID,NAME
+
+# Graphical view with dimensions (use semicolon to separate multiple dimensions)
+/create-view --name SALES_FACT_VW --source SALES_FACT --dimensions "CUSTOMER_ID:DIM_CUSTOMER:ID;PRODUCT_ID:DIM_PRODUCT:ID"
 ```
 
 ---
@@ -164,7 +175,8 @@ Instead of memorizing command syntax, describe your requirements in plain Englis
 First, make a sales fact table with order number, customer ID, product ID, and amount.
 Then make a customer dimension table with ID, name, and city.
 Next, make a product dimension table with ID, name, and category.
-Finally, make an analytic model linking these dimensions with amount sum as the measure."
+Then make a fact view based on the sales fact table, linking these two dimensions.
+Finally, make an analytic model based on the fact view with amount sum as the measure."
 ```
 
 Claude Code will automatically:
@@ -212,13 +224,6 @@ Skills generate artifacts in CSN (Core Schema Notation) format, the JSON represe
 2. Reading the artifact structure via CLI: `datasphere objects views read --name ARTIFACT_NAME`
 3. Analyzing the JSON structure to identify required fields and patterns
 4. Generating new artifacts based on these templates
-
-### Analytic Model Associations
-
-Analytic models use a specific association naming format:
-- **Association names**: `_TABLE∞INDEX` (e.g., `_DIM_CUSTOMER∞0`)
-- **Association steps**: `_TABLE` (without the `∞INDEX` suffix)
-- **Dimension attributes**: Use original names without prefixes
 
 ## Limitations
 

@@ -65,11 +65,18 @@ TOKEN_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/token
 /create-local-table --name TABLE_NAME --columns COLUMN_DEFINITIONS [--space SPACE_ID] [--label LABEL]
 ```
 
-**列格式：** `NAME:TYPE:LENGTH[:key]`
+**列格式：** `NAME:TYPE:LENGTH[:SCALE][:key][:required]`
 
 **示例：**
 ```bash
+# 简单表
 /create-local-table --name CUSTOMER --columns ID:String:10:key,NAME:String:100,EMAIL:String:100
+
+# 带 Decimal（使用冒号分隔精度和小数位，如 15:2）
+/create-local-table --name SALES --columns ORDER_ID:String:10:key,AMOUNT:Decimal:15:2:required
+
+# 维度表
+/create-local-table --name DIM_CUSTOMER --columns ID:String:10:key,NAME:String:100 --dimension
 ```
 
 **支持的类型：** `String`, `Integer`, `Decimal`, `Date`, `DateTime`, `Boolean`
@@ -78,16 +85,20 @@ TOKEN_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/token
 
 ### create-view
 
-基于现有表或视图创建视图。
+基于现有表或视图创建视图。支持创建带维度关联的图形化视图。
 
 **语法：**
 ```bash
-/create-view --name VIEW_NAME --source SOURCE_NAME [--columns COLUMNS] [--space SPACE_ID] [--label LABEL]
+/create-view --name VIEW_NAME --source SOURCE_NAME [--columns COLUMNS] [--dimensions DIMENSIONS] [--space SPACE_ID] [--label LABEL]
 ```
 
 **示例：**
 ```bash
+# 简单视图
 /create-view --name V_CUSTOMER --source CUSTOMER --columns ID,NAME
+
+# 带维度的图形化视图（使用分号分隔多个维度）
+/create-view --name SALES_FACT_VW --source SALES_FACT --dimensions "CUSTOMER_ID:DIM_CUSTOMER:ID;PRODUCT_ID:DIM_PRODUCT:ID"
 ```
 
 ---
@@ -164,7 +175,8 @@ TOKEN_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/token
 首先创建销售事实表，包含订单号、客户 ID、产品 ID 和金额。
 然后创建客户维度表，包含 ID、姓名和城市。
 接着创建产品维度表，包含 ID、名称和类别。
-最后创建分析模型，关联这些维度，用金额求和作为度量。"
+然后创建事实视图，基于销售事实表，关联这两个维度。
+最后创建分析模型，基于事实视图，用金额求和作为度量。"
 ```
 
 Claude Code 会自动：
@@ -212,13 +224,6 @@ Skills 生成 CSN (Core Schema Notation) 格式的 artifacts，这是 CDS (Core 
 2. 通过 CLI 读取 artifact 结构：`datasphere objects views read --name ARTIFACT_NAME`
 3. 分析 JSON 结构，识别必需字段和模式
 4. 基于这些模板生成新的 artifacts
-
-### 分析模型关联
-
-分析模型使用特定的关联命名格式：
-- **关联名称**：`_TABLE∞INDEX` (例如 `_DIM_CUSTOMER∞0`)
-- **关联步骤**：`_TABLE` (不带 `∞INDEX` 后缀)
-- **维度属性**：使用原始名称，不添加前缀
 
 ## 限制
 

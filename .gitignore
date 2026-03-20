@@ -6,6 +6,9 @@ secrets.json
 cache/
 .datasphere-cli/
 
+# Claude Code local settings (may contain project-specific paths)
+.claude/settings.local.json
+
 # Blog posts and internal documents (not for public repo)
 BLOG.md
 BLOG_ZH.md
