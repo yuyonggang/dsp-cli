@@ -214,16 +214,21 @@ async function createAnalyticModel(params) {
     });
   }
 
-  // If not specified, auto-detect
-  if (attributeList.length === 0 && measureList.length === 0) {
+  // Auto-detect: if measures specified but no attributes, auto-detect attributes
+  // If nothing specified, auto-detect both
+  if (attributeList.length === 0) {
     Object.keys(sourceElements).forEach(colName => {
       const element = sourceElements[colName];
       // Skip associations
       if (element.type === "cds.Association") return;
+      // Skip if already in measure list
+      if (measureList.includes(colName)) return;
 
-      if (isNumericType(element.type)) {
+      if (measureList.length === 0 && isNumericType(element.type)) {
+        // Only auto-detect measures if no measures were specified
         measureList.push(colName);
-      } else {
+      } else if (!isNumericType(element.type) || measureList.length > 0) {
+        // Add non-numeric columns as attributes, or all non-measure columns if measures were specified
         attributeList.push(colName);
       }
     });
@@ -235,6 +240,7 @@ async function createAnalyticModel(params) {
   const mixinAssociations = {};
   const dimensionSources = {};
   const dimensionAttributes = {};
+  const dimensionSelectColumns = {};  // Store dimension columns to add after fact attributes
 
   // If source is a view with associations, use those associations
   if (isView && Object.keys(sourceAssociations).length > 0) {
@@ -287,7 +293,7 @@ async function createAnalyticModel(params) {
 
       selectColumns.push({ ref: [assocName] });
 
-      // Add mixin association
+      // Add mixin association (no @EndUserText.label in mixin)
       mixinAssociations[assocName] = {
         type: "cds.Association",
         on: [
@@ -295,15 +301,18 @@ async function createAnalyticModel(params) {
           "=",
           { ref: [assocName, assocDef.on[2].ref[1]] }  // Join key from association definition
         ],
-        target: target,
-        "@EndUserText.label": fkColumn
+        target: target
       };
 
       // Add dimension attributes with suffix naming (ATTR_FK format)
+      // Skip dimension's ID/key column - it's already represented by the FK column
       const suffix = `_${fkColumn}`;
+      const joinKey = assocDef.on[2].ref[1];  // The key column in dimension (e.g., "ID")
+
       Object.keys(dimElements).forEach(attrName => {
         const dimEl = dimElements[attrName];
         if (dimEl.type === "cds.Association") return;  // Skip associations in dimension
+        if (attrName === joinKey) return;  // Skip ID/key column - already represented by FK
 
         const amAttrName = `${attrName}${suffix}`;
 
@@ -312,10 +321,7 @@ async function createAnalyticModel(params) {
           "@Analytics.navigationAttributeRef": [assocName, attrName]
         };
 
-        selectColumns.push({
-          ref: [assocName, attrName],
-          as: amAttrName
-        });
+        // Don't add to selectColumns here - will be added after fact attributes
 
         // Add to business layer
         dimensionAttributes[amAttrName] = {
@@ -326,6 +332,9 @@ async function createAnalyticModel(params) {
           duplicated: false
         };
       });
+
+      // Store dimension attribute columns for later (after fact attributes)
+      dimensionSelectColumns[assocName] = { suffix, joinKey, dimElements };
 
       // Add dimension source to business layer
       dimensionSources[assocName] = {
@@ -376,6 +385,22 @@ async function createAnalyticModel(params) {
     });
   });
 
+  // Add dimension attribute columns AFTER fact attributes (correct order)
+  for (const [assocName, dimInfo] of Object.entries(dimensionSelectColumns)) {
+    const { suffix, joinKey, dimElements } = dimInfo;
+    Object.keys(dimElements).forEach(attrName => {
+      const dimEl = dimElements[attrName];
+      if (dimEl.type === "cds.Association") return;  // Skip associations
+      if (attrName === joinKey) return;  // Skip ID/key column
+
+      const amAttrName = `${attrName}${suffix}`;
+      selectColumns.push({
+        ref: [assocName, attrName],
+        as: amAttrName
+      });
+    });
+  }
+
   // Build SELECT query
   const selectQuery = {
     SELECT: {
@@ -395,15 +420,36 @@ async function createAnalyticModel(params) {
   // Build business layer attributes
   const businessAttributes = {};
 
-  attributeList.forEach(colName => {
-    // Skip FK columns (they're handled as dimension sources)
-    let isFKColumn = false;
-    for (const assocName of Object.keys(sourceAssociations)) {
-      if (sourceElements[colName]?.["@ObjectModel.foreignKey.association"]?.["="] === assocName) {
-        isFKColumn = true;
+  // First, add FK columns that were processed for associations
+  // These need to be added BEFORE other attributes with usedForDimensionSourceKey
+  for (const [assocName, assocDef] of Object.entries(sourceAssociations)) {
+    // Find the FK column for this association
+    for (const [colName, colDef] of Object.entries(sourceElements)) {
+      if (colDef["@ObjectModel.foreignKey.association"] &&
+          colDef["@ObjectModel.foreignKey.association"]["="] === assocName) {
+        businessAttributes[colName] = {
+          attributeType: "AnalyticModelAttributeType.FactSourceAttribute",
+          attributeMapping: {
+            [params.source]: {
+              key: colName
+            }
+          },
+          text: sourceElements[colName]["@EndUserText.label"] || colName,
+          duplicated: false,
+          usedForDimensionSourceKey: assocName
+        };
         break;
       }
     }
+  }
+
+  // Then add other fact attributes (non-FK columns)
+  attributeList.forEach(colName => {
+    // Skip if already added as FK column
+    if (businessAttributes[colName]) return;
+
+    // Skip associations
+    if (sourceElements[colName]?.type === "cds.Association") return;
 
     businessAttributes[colName] = {
       attributeType: "AnalyticModelAttributeType.FactSourceAttribute",
@@ -415,12 +461,6 @@ async function createAnalyticModel(params) {
       text: sourceElements[colName]["@EndUserText.label"] || colName,
       duplicated: false
     };
-
-    if (isFKColumn) {
-      // Mark as used for dimension source
-      const assocName = sourceElements[colName]["@ObjectModel.foreignKey.association"]["="];
-      businessAttributes[colName].usedForDimensionSourceKey = assocName;
-    }
   });
 
   // Merge dimension attributes
