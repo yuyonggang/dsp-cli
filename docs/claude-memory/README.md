@@ -27,9 +27,6 @@ Contains:
 
 **Use this as a reference** when creating complete data models with dimension associations.
 
-### [user_series_numbering_preference.md](user_series_numbering_preference.md)
-User preference for using simple numeric suffixes instead of timestamps.
-
 ## How to Use
 
 ### For Users
