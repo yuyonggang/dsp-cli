@@ -54,6 +54,14 @@ Configure an OAuth client in your Datasphere tenant:
    - **Token Lifetime**: 3600 seconds (recommended)
 3. Note the Client ID and Client Secret for your `.env` file
 
+## Documentation
+
+- 📖 **[Best Practices](docs/claude-memory/README.md)** - Proven patterns and workflows
+- 🎯 **[Series Numbering Guide](docs/claude-memory/reference_successful_series_numbering.md)** - Complete workflow examples
+- 💡 **[Naming Conventions](docs/claude-memory/user_series_numbering_preference.md)** - Recommended naming patterns
+
+For detailed command references, see the Skills Reference section below.
+
 ## Skills Reference
 
 ### create-local-table
@@ -185,10 +193,14 @@ Claude Code will automatically:
 3. Generate the correct command parameters
 4. Execute the Skills in the correct sequence
 
+💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See [naming conventions](docs/claude-memory/user_series_numbering_preference.md) for details.
+
 ## Project Structure
 
 ```
 dsp-cli/
+├── docs/
+│   └── claude-memory/          # Best practices and workflow examples
 ├── skills/
 │   ├── create-local-table/
 │   │   ├── create-local-table.js
@@ -200,8 +212,7 @@ dsp-cli/
 │   └── create-transformation-flow/
 ├── .env.example
 ├── package.json
-├── README.md
-└── README_CN.md
+└── README.md
 ```
 
 Each skill directory contains:
