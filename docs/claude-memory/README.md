@@ -15,7 +15,7 @@ These files serve as:
 ### [MEMORY.md](MEMORY.md)
 Index file that organizes all memory entries by type.
 
-### [reference_successful_series_numbering.md](reference_successful_series_numbering.md)
+### [workflow_guide.md](workflow_guide.md)
 **Complete workflow** for creating data models with series numbering.
 
 Contains:

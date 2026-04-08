@@ -57,7 +57,7 @@ Configure an OAuth client in your Datasphere tenant:
 ## Documentation
 
 - 📖 **[Best Practices](docs/claude-memory/README.md)** - Proven patterns and workflows
-- 🎯 **[Complete Workflow Guide](docs/claude-memory/reference_successful_series_numbering.md)** - Series numbering, naming conventions, and command examples
+- 🎯 **[Workflow Guide](docs/claude-memory/workflow_guide.md)** - Series numbering, naming conventions, and command examples
 
 For detailed command references, see the Skills Reference section below.
 
@@ -192,7 +192,7 @@ Claude Code will automatically:
 3. Generate the correct command parameters
 4. Execute the Skills in the correct sequence
 
-💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [complete workflow guide](docs/claude-memory/reference_successful_series_numbering.md) for details.
+💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [workflow guide](docs/claude-memory/workflow_guide.md) for details.
 
 ## Project Structure
 
