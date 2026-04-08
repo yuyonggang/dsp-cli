@@ -16,6 +16,10 @@ BLOG_SIMPLE.md
 SECURITY.md
 TEST_SUMMARY.md
 
+# Chinese README files (redundant, keep English only)
+README_CN.md
+README_ZH.md
+
 # Test scripts with hardcoded credentials (moved to private directory)
 tests-private/
 
