@@ -13,17 +13,12 @@ import fs from "fs/promises";
 const HOST = process.env.DATASPHERE_HOST;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const AUTH_URL = process.env.AUTHORIZATION_URL;
-const TOKEN_URL = process.env.TOKEN_URL;
-
 // Validate required environment variables
 function validateEnvironment() {
   const required = {
     DATASPHERE_HOST: HOST,
     CLIENT_ID: CLIENT_ID,
     CLIENT_SECRET: CLIENT_SECRET,
-    AUTHORIZATION_URL: AUTH_URL,
-    TOKEN_URL: TOKEN_URL,
   };
 
   const missing = Object.entries(required)
@@ -92,8 +87,6 @@ async function authenticate() {
     "--host": HOST,
     "--client-id": CLIENT_ID,
     "--client-secret": CLIENT_SECRET,
-    "--authorization-url": AUTH_URL,
-    "--token-url": TOKEN_URL,
     "--authorization-flow": "authorization_code",
     "--force": true,
   });
