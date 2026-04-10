@@ -98,9 +98,9 @@ Finally, make an analytic model with amount sum as the measure."
 
 💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [Best Practices guide](docs/best-practices.md) for details.
 
-### Command Line Reference
+### Skill Command Reference
 
-You can also invoke skills directly via command line if you prefer explicit control.
+You can also invoke skills directly using slash commands if you prefer explicit control over parameters.
 
 <details>
 <summary><strong>Click to expand command reference</strong></summary>
@@ -210,9 +210,9 @@ Creates a transformation flow with custom logic.
 
 </details>
 
-**When to use command line vs natural language:**
+**When to use slash commands vs natural language:**
 - **Natural language**: Multi-step workflows, exploratory modeling, quick prototypes
-- **Command line**: Automation scripts, CI/CD pipelines, precise control over parameters
+- **Slash commands**: Precise control over parameters, repeatable single operations
 
 ## OAuth 2.0 Configuration
 
