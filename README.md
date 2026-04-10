@@ -205,7 +205,7 @@ Creates a transformation flow with custom logic.
 
 **Syntax:**
 ```bash
-node skills/create-transformation-flow/create-transformation-flow.js --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
+/create-transformation-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
 ```
 
 </details>
@@ -215,6 +215,31 @@ node skills/create-transformation-flow/create-transformation-flow.js --name FLOW
 - **Command line**: Automation scripts, CI/CD pipelines, precise control over parameters
 
 ## OAuth 2.0 Configuration
+
+Configure an OAuth client in your Datasphere tenant:
+
+1. Navigate to: **System** → **Administration** → **App Integration**
+2. Create new OAuth 2.0 client:
+   - **Authorization Grant**: Authorization Code
+   - **Redirect URI**: `http://localhost:8080/`
+   - **Token Lifetime**: 3600 seconds (recommended)
+3. Note the Client ID and Client Secret for your `.env` file
+
+### Authentication Flow
+
+- **First execution**: Opens browser for OAuth authorization
+- **Subsequent executions**: Uses cached tokens (valid for 1 hour)
+- **Token refresh**: Automatically refreshes using refresh_token when expired
+- **Token cache location**: `~/.@sap/datasphere-cli/.cache/secrets.json`
+
+For detailed information about authentication, token caching, and troubleshooting, see the [Authentication Guide](docs/authentication-guide.md).
+
+## Documentation
+
+- 📖 **[Authentication Guide](docs/authentication-guide.md)** - OAuth setup, token caching, and troubleshooting
+- 🎯 **[Best Practices](docs/best-practices.md)** - Series numbering, workflows, and natural language usage
+
+## Project Structure
 
 ```
 dsp-cli/
