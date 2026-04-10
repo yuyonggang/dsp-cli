@@ -16,47 +16,35 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 This project provides a three-layer architecture for interacting with SAP Datasphere:
 
 ```
-┌─────────────────────────────────┐
-│   Natural Language Input        │  "Create a customer table..."
-└────────────────┬────────────────┘
-                 ↓
-┌─────────────────────────────────┐
-│   Claude Code Skills            │  Parse → Generate CSN → Parameters
-└────────────────┬────────────────┘
-                 ↓
-┌─────────────────────────────────┐
-│   @sap/datasphere-cli           │  OAuth → API Calls
-└────────────────┬────────────────┘
-                 ↓
-┌─────────────────────────────────┐
-│   SAP Datasphere                │  Create artifacts
-└─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│   Natural Language                                                  │
+│   "Create a customer dimension table with ID, name, and city"      │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│   Skills (Slash Commands)                                           │
+│   /create-local-table --name DIM_CUSTOMER                          │
+│                       --columns ID:String:10:key,NAME:String:100    │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│   Datasphere CLI                                                    │
+│   datasphere objects local-tables create                            │
+│                      --host ... --space ... --file-path table.json  │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│   SAP Datasphere API                                                │
+│   Table created in tenant                                           │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Layers explained:**
+**How each layer works:**
 
-1. **Natural Language** - You describe what you want in plain English
-   - Example: `"Create a customer dimension table with ID, name, and city"`
-   - Claude interprets your intent and requirements
-
-2. **Skills** - Structured Node.js scripts invoked via slash commands
-   - Example: `/create-local-table --name DIM_CUSTOMER --columns ID:String:10:key,NAME:String:100`
-   - Parse requirements → Generate CSN definitions → Call Datasphere CLI
-
-3. **Datasphere CLI** - Official SAP package executes low-level commands
-   - Example: `datasphere objects local-tables create --host ... --space ... --file-path ...`
-   - Handles OAuth authentication, API communication, token management
-
-**Example flow:**
-```
-You say:     "Create a customer table with ID and name"
-              ↓
-Skill runs:  /create-local-table --name CUSTOMER --columns ID:String:10:key,NAME:String:100
-              ↓
-CLI executes: datasphere objects local-tables create --file-path table.json
-              ↓
-Result:      Table created in SAP Datasphere
-```
+- **Layer 1 - Natural Language**: Claude interprets plain English descriptions
+- **Layer 2 - Skills**: Parse requirements → Generate CSN → Execute with parameters
+- **Layer 3 - CLI**: Official SAP package handles OAuth, API calls, token management
+- **Layer 4 - Result**: Artifacts created in your Datasphere tenant
 
 **Benefits of this approach:**
 - ✅ **Ease of use**: Natural language instead of complex JSON schemas
