@@ -44,68 +44,65 @@ When creating a complete analytical data model, follow this order:
 
 ### 1. Create Dimension Tables First
 
-Dimension tables should be created with the `--dimension` flag:
+Start by creating dimension tables. Clearly indicate they are dimensions:
 
-```bash
-node skills/create-local-table/create-local-table.js \
-  --name DIM_CUSTOMER_001 \
-  --columns "ID:String:10:key,NAME:String:100:required,CITY:String:50" \
-  --dimension
+```
+"Create a customer dimension table with ID, NAME, and CITY. 
+ID is the key. Use series 001."
+```
 
-node skills/create-local-table/create-local-table.js \
-  --name DIM_PRODUCT_001 \
-  --columns "ID:String:10:key,NAME:String:100:required,CATEGORY:String:50" \
-  --dimension
+```
+"Create a product dimension table with ID, NAME, and CATEGORY. 
+ID is the key. Use series 001."
 ```
 
 ### 2. Create Fact Table
 
-Fact tables do **not** use the `--dimension` flag:
+Next, create the fact table that references the dimensions:
 
-```bash
-node skills/create-local-table/create-local-table.js \
-  --name SALES_FACT_001 \
-  --columns "ORDER_ID:String:10:key,CUSTOMER_ID:String:10:required,PRODUCT_ID:String:10:required,AMOUNT:Decimal:15:2:required"
+```
+"Create a sales fact table with ORDER_ID, CUSTOMER_ID, PRODUCT_ID, and AMOUNT.
+ORDER_ID is the key. Use series 001."
 ```
 
 ### 3. Create View with Dimension Associations
 
-Link the fact table to dimensions using the `--dimensions` parameter (semicolon-separated):
+Create a view that links the fact table to dimensions:
 
-```bash
-node skills/create-view/create-view.js \
-  --name SALES_VW_001 \
-  --source SALES_FACT_001 \
-  --dimensions "CUSTOMER_ID:DIM_CUSTOMER_001:ID;PRODUCT_ID:DIM_PRODUCT_001:ID"
+```
+"Create a view SALES_VW_001 based on SALES_FACT_001.
+Link CUSTOMER_ID to DIM_CUSTOMER_001 and PRODUCT_ID to DIM_PRODUCT_001."
 ```
 
 ### 4. Create Analytic Model
 
-The analytic model automatically detects dimensions from the view:
+Finally, create the analytic model with measures:
 
-```bash
-node skills/create-analytic-model/create-analytic-model.js \
-  --name AM_SALES_001 \
-  --source SALES_VW_001 \
-  --measures "AMOUNT:sum"
+```
+"Create an analytic model AM_SALES_001 based on SALES_VW_001.
+Add AMOUNT as a sum measure."
 ```
 
 ## Natural Language Workflow
 
-You can describe your requirements in natural language. Here's an example that works well:
+You can describe the entire workflow in one request:
 
 ```
-Create a sales analysis data model.
-First, make a sales fact table with order number, customer ID, product ID, and amount.
-Then make customer and product dimension tables.
-Create a fact view linking these dimensions.
-Finally, make an analytic model with amount sum as the measure.
+Create a sales analysis data model with series 001.
+
+First, make a customer dimension table with ID, NAME, and CITY.
+Then make a product dimension table with ID, NAME, and CATEGORY.
+Next, create a sales fact table with ORDER_ID, CUSTOMER_ID, PRODUCT_ID, and AMOUNT.
+Create a view linking the fact table to both dimensions.
+Finally, make an analytic model with AMOUNT sum as the measure.
 ```
 
 Claude will automatically:
-- Apply the series numbering pattern
+- Apply the series numbering pattern (001)
 - Create objects in the correct order
-- Set appropriate flags (--dimension, associations, etc.)
+- Mark dimension tables with the appropriate flag
+- Set up associations between fact and dimensions
+- Configure measures in the analytic model
 - Verify the creation results
 
 ### Task Progress Feedback
