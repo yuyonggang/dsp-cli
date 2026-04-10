@@ -11,6 +11,49 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 - **CLI Integration**: Built on SAP's official `@sap/datasphere-cli` package
 - **Reverse Engineering**: Learn artifact formats by analyzing existing Datasphere objects
 
+## How It Works
+
+This project provides a three-layer architecture for interacting with SAP Datasphere:
+
+```
+┌─────────────────────────────────┐
+│   Natural Language Input        │  "Create a customer table..."
+└────────────────┬────────────────┘
+                 ↓
+┌─────────────────────────────────┐
+│   Claude Code Skills            │  Parse → Generate CSN → Parameters
+└────────────────┬────────────────┘
+                 ↓
+┌─────────────────────────────────┐
+│   @sap/datasphere-cli           │  OAuth → API Calls
+└────────────────┬────────────────┘
+                 ↓
+┌─────────────────────────────────┐
+│   SAP Datasphere                │  Create artifacts
+└─────────────────────────────────┘
+```
+
+**Layers explained:**
+
+1. **Natural Language** - You describe what you want in plain English
+   - Example: "Create a customer dimension table with ID, name, and city"
+
+2. **Skills** - Structured Node.js scripts that:
+   - Parse your requirements
+   - Generate CSN (Core Schema Notation) definitions
+   - Map to appropriate CLI commands with correct parameters
+
+3. **Datasphere CLI** - Official SAP package (`@sap/datasphere-cli`) that:
+   - Handles OAuth authentication
+   - Communicates with Datasphere REST APIs
+   - Manages token caching and refresh
+
+**Benefits of this approach:**
+- ✅ **Ease of use**: Natural language instead of complex JSON schemas
+- ✅ **Flexibility**: Use natural language for exploration, slash commands for precision
+- ✅ **Official integration**: Built on SAP's supported CLI, not custom API calls
+- ✅ **Learning tool**: Inspect generated CSN to understand Datasphere's data model format
+
 ## Quick Start
 
 1. **Clone and install:**
