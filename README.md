@@ -7,14 +7,39 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 - **Natural Language Processing**: Create Datasphere artifacts using plain English descriptions
 - **Six Artifact Types**: Local Tables, Views, Analytic Models, Data Flows, Replication Flows, Transformation Flows
 - **Complex Model Support**: Automatically handle dimension associations, measure definitions, and business layer configurations
+- **Token Caching**: Efficient OAuth token reuse - authenticate once, work for hours
 - **CLI Integration**: Built on SAP's official `@sap/datasphere-cli` package
 - **Reverse Engineering**: Learn artifact formats by analyzing existing Datasphere objects
+
+## Quick Start
+
+1. **Clone and install:**
+```bash
+git clone https://github.com/yuyonggang/dsp-cli.git
+cd dsp-cli
+npm install
+```
+
+2. **Configure credentials:**
+```bash
+cp .env.example .env
+# Edit .env with your Datasphere host, client ID, and secret
+```
+
+3. **Create your first table using natural language:**
+```
+"Create a customer table with ID, name, and email. ID is the key."
+```
+
+Claude Code will automatically generate and execute the appropriate commands. On first run, your browser will open for OAuth authorization - subsequent runs will use cached tokens.
+
+📖 **New to the project?** Check out the [Best Practices guide](docs/best-practices.md) for recommended workflows and examples.
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - SAP Datasphere tenant with OAuth 2.0 client configured
-- Claude Code CLI
+- Claude Code (CLI, Desktop, or Web)
 
 ## Installation
 
@@ -36,32 +61,51 @@ cp .env.example .env
 
 Edit `.env` with your Datasphere credentials:
 ```
-DATASPHERE_HOST=https://your-tenant.datasphere.cloud.sap
+DATASPHERE_HOST=https://your-tenant.eu10.hcs.cloud.sap
 CLIENT_ID=your_client_id
 CLIENT_SECRET=your_client_secret
-AUTHORIZATION_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/authorize
-TOKEN_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/token
 ```
 
-## OAuth 2.0 Configuration
+**Note:** OAuth endpoints (authorization and token URLs) are automatically discovered via OpenID Connect. No manual configuration needed.
 
-Configure an OAuth client in your Datasphere tenant:
+See the [Authentication Guide](docs/authentication-guide.md) for detailed setup instructions and troubleshooting.
 
-1. Navigate to: **System** → **Administration** → **App Integration**
-2. Create new OAuth 2.0 client:
-   - **Authorization Grant**: Authorization Code
-   - **Redirect URI**: `http://localhost:8080/`
-   - **Token Lifetime**: 3600 seconds (recommended)
-3. Note the Client ID and Client Secret for your `.env` file
+## Usage
 
-## Documentation
+### Natural Language (Recommended)
 
-- 📖 **[Best Practices](docs/claude-memory/README.md)** - Proven patterns and workflows
-- 🎯 **[Workflow Guide](docs/claude-memory/workflow_guide.md)** - Series numbering, naming conventions, and command examples
+The primary way to use this project is through **natural language descriptions**. Describe what you want to create, and Claude Code will handle the rest.
 
-For detailed command references, see the Skills Reference section below.
+**Example 1: Simple Table**
+```
+"Create a customer table with ID, name, and email. ID is the key."
+```
 
-## Skills Reference
+**Example 2: Complete Data Model**
+```
+"Create a sales analysis data model with series 001.
+
+First, make a sales fact table with order number, customer ID, product ID, and amount.
+Then make customer and product dimension tables.
+Create a fact view linking these dimensions.
+Finally, make an analytic model with amount sum as the measure."
+```
+
+**What Claude Code does automatically:**
+1. Parse your requirements
+2. Determine the appropriate Skills to invoke
+3. Generate the correct command parameters (including series numbers)
+4. Execute the Skills in the correct sequence
+5. Show task progress for multi-step operations
+
+💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [Best Practices guide](docs/best-practices.md) for details.
+
+### Command Line Reference
+
+You can also invoke skills directly via command line if you prefer explicit control.
+
+<details>
+<summary><strong>Click to expand command reference</strong></summary>
 
 ### create-local-table
 
@@ -163,43 +207,22 @@ Creates a transformation flow with custom logic.
 
 **Syntax:**
 ```bash
-/create-transformation-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
+node skills/create-transformation-flow/create-transformation-flow.js --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
 ```
 
-## Natural Language Usage
+</details>
 
-Instead of memorizing command syntax, describe your requirements in plain English:
+**When to use command line vs natural language:**
+- **Natural language**: Multi-step workflows, exploratory modeling, quick prototypes
+- **Command line**: Automation scripts, CI/CD pipelines, precise control over parameters
 
-**Example 1: Simple Table**
-```
-"Create a customer table with ID, name, and email. ID is the key."
-```
-
-**Example 2: Multi-Step Data Model**
-```
-"Create a sales analysis data model.
-
-First, make a sales fact table with order number, customer ID, product ID, and amount.
-Then make a customer dimension table with ID, name, and city.
-Next, make a product dimension table with ID, name, and category.
-Then make a fact view based on the sales fact table, linking these two dimensions.
-Finally, make an analytic model based on the fact view with amount sum as the measure."
-```
-
-Claude Code will automatically:
-1. Parse your requirements
-2. Determine the appropriate Skills to invoke
-3. Generate the correct command parameters
-4. Execute the Skills in the correct sequence
-
-💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [workflow guide](docs/claude-memory/workflow_guide.md) for details.
-
-## Project Structure
+## OAuth 2.0 Configuration
 
 ```
 dsp-cli/
 ├── docs/
-│   └── claude-memory/          # Best practices and workflow examples
+│   ├── authentication-guide.md   # OAuth, token caching, troubleshooting
+│   └── best-practices.md         # Series numbering, workflows, patterns
 ├── skills/
 │   ├── create-local-table/
 │   │   ├── create-local-table.js

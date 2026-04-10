@@ -159,7 +159,6 @@ async function authenticate() {
     "--client-id": CLIENT_ID,
     "--client-secret": CLIENT_SECRET,
     "--authorization-flow": "authorization_code",
-    "--force": true,
   });
 
   await commands["config cache init"]({ "--host": HOST });
