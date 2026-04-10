@@ -45,48 +45,28 @@ This project provides a three-layer architecture for interacting with SAP Datasp
 - ✅ **Official integration**: Built on SAP's supported CLI, not custom API calls
 - ✅ **Learning tool**: Inspect generated CSN to understand Datasphere's data model format
 
-## Quick Start
+## Getting Started
 
-1. **Clone and install:**
-```bash
-git clone https://github.com/yuyonggang/dsp-cli.git
-cd dsp-cli
-npm install
-```
-
-2. **Configure credentials:**
-```bash
-cp .env.example .env
-# Edit .env with your Datasphere host, client ID, and secret
-```
-
-3. **Create your first table using natural language:**
-```
-"Create a customer table with ID, name, and email. ID is the key."
-```
-
-Claude Code will automatically generate and execute the appropriate commands. On first run, your browser will open for OAuth authorization - subsequent runs will use cached tokens.
-
-## Prerequisites
+### Prerequisites
 
 - Node.js (v14 or higher)
 - SAP Datasphere tenant with OAuth 2.0 client configured
 - Claude Code (CLI, Desktop, or Web)
 
-## Installation
+### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/yuyonggang/dsp-cli.git
 cd dsp-cli
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Configure environment variables:
+3. **Configure environment variables:**
 ```bash
 cp .env.example .env
 ```
@@ -98,9 +78,29 @@ CLIENT_ID=your_client_id
 CLIENT_SECRET=your_client_secret
 ```
 
-**Note:** OAuth endpoints (authorization and token URLs) are automatically discovered via OpenID Connect. No manual configuration needed.
+**Note:** OAuth endpoints are automatically discovered via OpenID Connect - no manual configuration needed.
+
+### OAuth 2.0 Setup
+
+Configure an OAuth client in your Datasphere tenant:
+
+1. Navigate to: **System** → **Administration** → **App Integration**
+2. Create new OAuth 2.0 client:
+   - **Authorization Grant**: Authorization Code
+   - **Redirect URI**: `http://localhost:8080/`
+   - **Token Lifetime**: 3600 seconds (recommended)
+3. Copy the Client ID and Client Secret to your `.env` file
 
 See the [Authentication Guide](docs/authentication-guide.md) for detailed setup instructions and troubleshooting.
+
+### First Use
+
+Create your first table using natural language:
+```
+"Create a customer table with ID, name, and email. ID is the key."
+```
+
+Claude Code will automatically generate and execute the appropriate commands. On first run, your browser will open for OAuth authorization - subsequent runs will use cached tokens (valid for 1 hour).
 
 ## Usage
 
@@ -247,26 +247,6 @@ Creates a transformation flow with custom logic.
 **When to use slash commands vs natural language:**
 - **Natural language**: Multi-step workflows, exploratory modeling, quick prototypes
 - **Slash commands**: Precise control over parameters, repeatable single operations
-
-## OAuth 2.0 Configuration
-
-Configure an OAuth client in your Datasphere tenant:
-
-1. Navigate to: **System** → **Administration** → **App Integration**
-2. Create new OAuth 2.0 client:
-   - **Authorization Grant**: Authorization Code
-   - **Redirect URI**: `http://localhost:8080/`
-   - **Token Lifetime**: 3600 seconds (recommended)
-3. Note the Client ID and Client Secret for your `.env` file
-
-### Authentication Flow
-
-- **First execution**: Opens browser for OAuth authorization
-- **Subsequent executions**: Uses cached tokens (valid for 1 hour)
-- **Token refresh**: Automatically refreshes using refresh_token when expired
-- **Token cache location**: `~/.@sap/datasphere-cli/.cache/secrets.json`
-
-For detailed information about authentication, token caching, and troubleshooting, see the [Authentication Guide](docs/authentication-guide.md).
 
 ## Documentation
 
