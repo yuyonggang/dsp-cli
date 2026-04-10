@@ -17,34 +17,35 @@ This project provides a three-layer architecture for interacting with SAP Datasp
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│   Natural Language                                                  │
+│   Layer 1: Natural Language                                         │
+│   Claude interprets plain English descriptions                      │
+│                                                                      │
 │   "Create a customer dimension table with ID, name, and city"      │
 └──────────────────────────────┬──────────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────────┐
-│   Skills (Slash Commands)                                           │
+│   Layer 2: Skills (Slash Commands)                                  │
+│   Parse requirements → Generate CSN → Execute with parameters       │
+│                                                                      │
 │   /create-local-table --name DIM_CUSTOMER                          │
 │                       --columns ID:String:10:key,NAME:String:100    │
 └──────────────────────────────┬──────────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────────┐
-│   Datasphere CLI                                                    │
+│   Layer 3: Datasphere CLI                                           │
+│   Official SAP package handles OAuth, API calls, token management   │
+│                                                                      │
 │   datasphere objects local-tables create                            │
 │                      --host ... --space ... --file-path table.json  │
 └──────────────────────────────┬──────────────────────────────────────┘
                                ↓
 ┌─────────────────────────────────────────────────────────────────────┐
-│   SAP Datasphere API                                                │
-│   Table created in tenant                                           │
+│   Layer 4: SAP Datasphere API                                       │
+│   Artifacts created in your Datasphere tenant                       │
+│                                                                      │
+│   ✓ Table created in tenant                                         │
 └─────────────────────────────────────────────────────────────────────┘
 ```
-
-**How each layer works:**
-
-- **Layer 1 - Natural Language**: Claude interprets plain English descriptions
-- **Layer 2 - Skills**: Parse requirements → Generate CSN → Execute with parameters
-- **Layer 3 - CLI**: Official SAP package handles OAuth, API calls, token management
-- **Layer 4 - Result**: Artifacts created in your Datasphere tenant
 
 **Benefits of this approach:**
 - ✅ **Ease of use**: Natural language instead of complex JSON schemas
