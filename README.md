@@ -16,35 +16,27 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 This project provides a three-layer architecture for interacting with SAP Datasphere:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│   Layer 1: Natural Language                                         │
-│   Claude interprets plain English descriptions                      │
-│                                                                      │
-│   "Create a customer dimension table with ID, name, and city"      │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│   Layer 2: Skills (Slash Commands)                                  │
-│   Parse requirements → Generate CSN → Execute with parameters       │
-│                                                                      │
-│   /create-local-table --name DIM_CUSTOMER                          │
-│                       --columns ID:String:10:key,NAME:String:100    │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│   Layer 3: Datasphere CLI                                           │
-│   Official SAP package handles OAuth, API calls, token management   │
-│                                                                      │
-│   datasphere objects local-tables create                            │
-│                      --host ... --space ... --file-path table.json  │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│   Layer 4: SAP Datasphere API                                       │
-│   Artifacts created in your Datasphere tenant                       │
-│                                                                      │
-│   ✓ Table created in tenant                                         │
-└─────────────────────────────────────────────────────────────────────┘
+╔═══════════════════════════════════════════════════════════════════╗
+║ YOU SAY                                                           ║
+║ "Create a customer dimension table with ID, name, and city"     ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ SKILLS TRANSLATE TO                                               ║
+║ /create-local-table --name DIM_CUSTOMER                          ║
+║                     --columns ID:String:10:key,NAME:String:100   ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ CLI EXECUTES                                                      ║
+║ datasphere objects local-tables create                            ║
+║                --host ... --space ... --file-path table.json      ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ RESULT                                                            ║
+║ ✓ Table created in SAP Datasphere                                ║
+╚═══════════════════════════════════════════════════════════════════╝
 ```
 
 **Benefits of this approach:**
