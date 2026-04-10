@@ -36,17 +36,27 @@ This project provides a three-layer architecture for interacting with SAP Datasp
 **Layers explained:**
 
 1. **Natural Language** - You describe what you want in plain English
-   - Example: "Create a customer dimension table with ID, name, and city"
+   - Example: `"Create a customer dimension table with ID, name, and city"`
+   - Claude interprets your intent and requirements
 
-2. **Skills** - Structured Node.js scripts that:
-   - Parse your requirements
-   - Generate CSN (Core Schema Notation) definitions
-   - Map to appropriate CLI commands with correct parameters
+2. **Skills** - Structured Node.js scripts invoked via slash commands
+   - Example: `/create-local-table --name DIM_CUSTOMER --columns ID:String:10:key,NAME:String:100`
+   - Parse requirements → Generate CSN definitions → Call Datasphere CLI
 
-3. **Datasphere CLI** - Official SAP package (`@sap/datasphere-cli`) that:
-   - Handles OAuth authentication
-   - Communicates with Datasphere REST APIs
-   - Manages token caching and refresh
+3. **Datasphere CLI** - Official SAP package executes low-level commands
+   - Example: `datasphere objects local-tables create --host ... --space ... --file-path ...`
+   - Handles OAuth authentication, API communication, token management
+
+**Example flow:**
+```
+You say:     "Create a customer table with ID and name"
+              ↓
+Skill runs:  /create-local-table --name CUSTOMER --columns ID:String:10:key,NAME:String:100
+              ↓
+CLI executes: datasphere objects local-tables create --file-path table.json
+              ↓
+Result:      Table created in SAP Datasphere
+```
 
 **Benefits of this approach:**
 - ✅ **Ease of use**: Natural language instead of complex JSON schemas
