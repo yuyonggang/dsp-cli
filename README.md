@@ -33,8 +33,6 @@ cp .env.example .env
 
 Claude Code will automatically generate and execute the appropriate commands. On first run, your browser will open for OAuth authorization - subsequent runs will use cached tokens.
 
-📖 **New to the project?** Check out the [Best Practices guide](docs/best-practices.md) for recommended workflows and examples.
-
 ## Prerequisites
 
 - Node.js (v14 or higher)
