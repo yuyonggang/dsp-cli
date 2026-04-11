@@ -9,17 +9,6 @@ cache/
 # Claude Code local settings (may contain project-specific paths)
 .claude/settings.local.json
 
-# Blog posts and internal documents (not for public repo)
-BLOG.md
-BLOG_ZH.md
-BLOG_SIMPLE.md
-SECURITY.md
-TEST_SUMMARY.md
-
-# Chinese README files (redundant, keep English only)
-README_CN.md
-README_ZH.md
-
 # Test scripts with hardcoded credentials (moved to private directory)
 tests-private/
 
