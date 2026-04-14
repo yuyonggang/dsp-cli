@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env.copy
 secrets.json
 *.log
 .DS_Store
