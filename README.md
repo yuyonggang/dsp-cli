@@ -8,29 +8,66 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 - **16 Skills**: Create, inspect, modify, analyze, and export Datasphere objects
 - **Complex Model Support**: Automatically handle dimension associations, measure definitions, and business layer configurations
 - **Impact Analysis**: Full dependency graph traversal with column gap detection
+- **Token Caching**: Efficient OAuth token reuse - authenticate once, work for hours
 - **CLI Integration**: Built on SAP's official `@sap/datasphere-cli` package
 - **Reverse Engineering**: Learn artifact formats by analyzing existing Datasphere objects
 
-## Prerequisites
+## How It Works
+
+This project provides a three-layer architecture for interacting with SAP Datasphere:
+
+```
+╔═══════════════════════════════════════════════════════════════════╗
+║ YOU SAY                                                           ║
+║ "Create a customer dimension table with ID, name, and city"     ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ SKILLS TRANSLATE TO                                               ║
+║ /create-local-table --name DIM_CUSTOMER                          ║
+║                     --columns ID:String:10:key,NAME:String:100   ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ CLI EXECUTES                                                      ║
+║ datasphere objects local-tables create                            ║
+║                --host ... --space ... --file-path table.json      ║
+╚═══════════════════════════════════════════════════════════════════╝
+                              ↓
+╔═══════════════════════════════════════════════════════════════════╗
+║ RESULT                                                            ║
+║ ✓ Table created in SAP Datasphere                                ║
+╚═══════════════════════════════════════════════════════════════════╝
+```
+
+**Benefits of this approach:**
+- **Ease of use**: Natural language instead of complex JSON schemas
+- **Flexibility**: Use natural language for exploration, slash commands for precision
+- **Official integration**: Built on SAP's supported CLI, not custom API calls
+- **Learning tool**: Inspect generated CSN to understand Datasphere's data model format
+
+## Getting Started
+
+### Prerequisites
 
 - Node.js (v20 or higher)
 - SAP Datasphere tenant with OAuth 2.0 client configured
-- Claude Code CLI
+- Claude Code (CLI, Desktop, or Web)
 
-## Installation
+### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/yuyonggang/dsp-cli.git
 cd dsp-cli
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Configure environment variables:
+3. **Configure environment variables:**
 ```bash
 cp .env.example .env
 ```
@@ -43,7 +80,9 @@ CLIENT_SECRET=your-client-secret
 SPACE=YOUR_SPACE_ID
 ```
 
-## OAuth 2.0 Configuration
+**Note:** OAuth endpoints are automatically discovered via OpenID Connect - no manual configuration needed.
+
+### OAuth 2.0 Setup
 
 Configure an OAuth client in your Datasphere tenant:
 
@@ -52,18 +91,58 @@ Configure an OAuth client in your Datasphere tenant:
    - **Authorization Grant**: Authorization Code
    - **Redirect URI**: `http://localhost:8080/`
    - **Token Lifetime**: 3600 seconds (recommended)
-3. Note the Client ID and Client Secret for your `.env` file
+3. Copy the Client ID and Client Secret to your `.env` file
 
-## Documentation
+See the [Authentication Guide](docs/authentication-guide.md) for detailed setup instructions and troubleshooting.
 
-- 📖 **[Best Practices](docs/claude-memory/README.md)** - Proven patterns and workflows
-- 🎯 **[Workflow Guide](docs/claude-memory/workflow_guide.md)** - Series numbering, naming conventions, and command examples
+### First Use
 
-For detailed command references, see the Skills Reference section below.
+Create your first table using natural language:
+```
+"Create a customer table with ID, name, and email. ID is the key."
+```
+
+Claude Code will automatically generate and execute the appropriate commands. On first run, your browser will open for OAuth authorization - subsequent runs will use cached tokens (valid for 1 hour).
+
+## Usage
+
+### Natural Language (Recommended)
+
+The primary way to use this project is through **natural language descriptions**. Describe what you want to create, and Claude Code will handle the rest.
+
+**Example 1: Simple Table**
+```
+"Create a customer table with ID, name, and email. ID is the key."
+```
+
+**Example 2: Complete Data Model**
+```
+"Create a sales analysis data model with series 001.
+
+First, make a sales fact table with order number, customer ID, product ID, and amount.
+Then make customer and product dimension tables.
+Create a fact view linking these dimensions.
+Finally, make an analytic model with amount sum as the measure."
+```
+
+**What Claude Code does automatically:**
+1. Parse your requirements
+2. Determine the appropriate Skills to invoke
+3. Generate the correct command parameters (including series numbers)
+4. Execute the Skills in the correct sequence
+5. Show task progress for multi-step operations
+
+**Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [Best Practices guide](docs/best-practices.md) for details.
+
+**When to use slash commands vs natural language:**
+- **Natural language**: Multi-step workflows, exploratory modeling, quick prototypes
+- **Slash commands**: Precise control over parameters, repeatable single operations
 
 ## Skills Reference
 
-### create-local-table
+### Creation Skills
+
+#### create-local-table
 
 Creates a local table in Datasphere.
 
@@ -90,7 +169,7 @@ Creates a local table in Datasphere.
 
 ---
 
-### create-view
+#### create-view
 
 Creates a view based on an existing table or view. Supports creating graphical views with dimension associations.
 
@@ -110,7 +189,7 @@ Creates a view based on an existing table or view. Supports creating graphical v
 
 ---
 
-### create-analytic-model
+#### create-analytic-model
 
 Creates an analytic model with dimension associations.
 
@@ -135,40 +214,7 @@ Creates an analytic model with dimension associations.
 
 ---
 
-### create-data-flow
-
-Creates a data flow for data transformation pipelines.
-
-**Syntax:**
-```bash
-/create-data-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
-```
-
----
-
-### create-replication-flow
-
-Creates a replication flow for data synchronization.
-
-**Syntax:**
-```bash
-/create-replication-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
-```
-
----
-
-### create-transformation-flow
-
-Creates a transformation flow with custom logic.
-
-**Syntax:**
-```bash
-/create-transformation-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
-```
-
----
-
-### create-model
+#### create-model
 
 Orchestrates full data model creation in a single command: dimension tables, fact table, view with associations, and analytic model.
 
@@ -191,7 +237,42 @@ Orchestrates full data model creation in a single command: dimension tables, fac
 
 ---
 
-### add-columns-to-view
+#### create-data-flow
+
+Creates a data flow for data transformation pipelines.
+
+**Syntax:**
+```bash
+/create-data-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
+```
+
+---
+
+#### create-replication-flow
+
+Creates a replication flow for data synchronization.
+
+**Syntax:**
+```bash
+/create-replication-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
+```
+
+---
+
+#### create-transformation-flow
+
+Creates a transformation flow with custom logic.
+
+**Syntax:**
+```bash
+/create-transformation-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
+```
+
+### Modification Skills
+
+---
+
+#### add-columns-to-view
 
 Adds columns to an existing graphical view, keeping it in Graphical View Builder mode.
 
@@ -210,7 +291,7 @@ Adds columns to an existing graphical view, keeping it in Graphical View Builder
 
 ---
 
-### rename-column
+#### rename-column
 
 Renames a column in a view and cascades the rename to all dependent analytic models.
 
@@ -226,7 +307,7 @@ Renames a column in a view and cascades the rename to all dependent analytic mod
 
 ---
 
-### remove-column
+#### remove-column
 
 Removes a column from a view and cascades the removal to all dependent analytic models.
 
@@ -240,9 +321,11 @@ Removes a column from a view and cascades the removal to all dependent analytic 
 /remove-column --object SALES_VW_001 --column LEGACY_CODE
 ```
 
+### Inspection & Analysis Skills
+
 ---
 
-### list-objects
+#### list-objects
 
 Lists all objects of a given type in a Datasphere space.
 
@@ -260,7 +343,7 @@ Lists all objects of a given type in a Datasphere space.
 
 ---
 
-### read-object
+#### read-object
 
 Reads and displays the definition of an existing Datasphere object.
 
@@ -276,7 +359,7 @@ Reads and displays the definition of an existing Datasphere object.
 
 ---
 
-### describe-model
+#### describe-model
 
 Traverses the full dependency chain of an analytic model or view and prints a summary.
 
@@ -292,7 +375,7 @@ Traverses the full dependency chain of an analytic model or view and prints a su
 
 ---
 
-### find-dependents
+#### find-dependents
 
 Finds all views and analytic models that reference a given table or view.
 
@@ -308,7 +391,7 @@ Finds all views and analytic models that reference a given table or view.
 
 ---
 
-### impact-analysis
+#### impact-analysis
 
 Builds a full dependency graph in a single scan and traverses it to show the complete impact chain. Optionally detects missing columns in downstream objects.
 
@@ -322,9 +405,11 @@ Builds a full dependency graph in a single scan and traverses it to show the com
 /impact-analysis --name MY_SOURCE_TABLE --direction downstream --columns NEW_COL --cache
 ```
 
+### Lifecycle Skills
+
 ---
 
-### export-model
+#### export-model
 
 Exports the full CSN definitions of a data model and all its dependencies to local JSON files.
 
@@ -338,40 +423,20 @@ Exports the full CSN definitions of a data model and all its dependencies to loc
 /export-model --name AM_SALES_001 --output-dir ./backups/sales-model
 ```
 
-## Natural Language Usage
+## Documentation
 
-Instead of memorizing command syntax, describe your requirements in plain English:
-
-**Example 1: Simple Table**
-```
-"Create a customer table with ID, name, and email. ID is the key."
-```
-
-**Example 2: Multi-Step Data Model**
-```
-"Create a sales analysis data model.
-
-First, make a sales fact table with order number, customer ID, product ID, and amount.
-Then make a customer dimension table with ID, name, and city.
-Next, make a product dimension table with ID, name, and category.
-Then make a fact view based on the sales fact table, linking these two dimensions.
-Finally, make an analytic model based on the fact view with amount sum as the measure."
-```
-
-Claude Code will automatically:
-1. Parse your requirements
-2. Determine the appropriate Skills to invoke
-3. Generate the correct command parameters
-4. Execute the Skills in the correct sequence
-
-💡 **Tip**: Use series numbers (001, 002, 003) to avoid naming conflicts when creating multiple test models. See the [workflow guide](docs/claude-memory/workflow_guide.md) for details.
+- **[Authentication Guide](docs/authentication-guide.md)** - OAuth setup, token caching, and troubleshooting
+- **[Best Practices](docs/best-practices.md)** - Series numbering, workflows, and natural language usage
+- **[Workflow Guide](docs/claude-memory/workflow_guide.md)** - Proven patterns with working command examples
 
 ## Project Structure
 
 ```
 dsp-cli/
 ├── docs/
-│   └── claude-memory/             # Best practices and workflow examples
+│   ├── authentication-guide.md    # OAuth, token caching, troubleshooting
+│   ├── best-practices.md          # Series numbering, workflows, patterns
+│   └── claude-memory/             # Proven workflows and reference links
 ├── skills/
 │   ├── create-local-table/        # Local tables (fact or dimension)
 │   ├── create-view/               # Graphical views with associations
@@ -385,7 +450,7 @@ dsp-cli/
 │   ├── remove-column/             # Remove column + cascade to analytic models
 │   ├── list-objects/              # List all objects of a type in a space
 │   ├── read-object/               # Read and pretty-print any object definition
-│   ├── describe-model/            # Traverse full model chain (AM → view → fact → dims)
+│   ├── describe-model/            # Traverse full model chain (AM -> view -> fact -> dims)
 │   ├── find-dependents/           # Find all views/AMs referencing a table or view
 │   ├── impact-analysis/           # Full recursive dependency graph + column gap analysis
 │   └── export-model/              # Export full model chain to local JSON files
