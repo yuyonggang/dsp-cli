@@ -22,13 +22,31 @@ Official SAP Help Portal and community links, organized by topic (CLI, authentic
 **Complete workflow** for creating data models with series numbering.
 
 Contains:
-- ✅ Proven creation sequence (dimensions → fact → view → analytic model)
-- ✅ Naming conventions with series numbers (001, 002, etc.)
-- ✅ Working command examples
-- ✅ Natural language input patterns
-- ✅ Success factors and common pitfalls
+- Proven creation sequence (dimensions -> fact -> view -> analytic model)
+- Naming conventions with series numbers (001, 002, etc.)
+- Working command examples
+- Natural language input patterns
+- Success factors and common pitfalls
 
 **Use this as a reference** when creating complete data models with dimension associations.
+
+### [analysis_guide.md](analysis_guide.md)
+**Complete workflow** for analyzing and modifying existing data models.
+
+Contains:
+- How to explore a space (list-objects, read-object)
+- Tracing dependencies (find-dependents vs impact-analysis)
+- Column change impact assessment with propagation analysis
+- Modifying views (add columns, rename, remove) with cascading
+- Worked example with a real SAP consolidation hierarchy
+- Recommended workflow for large changes (explore -> analyze -> export -> change -> verify)
+
+**Use this as a reference** when working with existing models or planning changes.
+
+### [known_limitations.md](known_limitations.md)
+**Honest documentation** of what doesn't work yet.
+
+Covers: missing skills (delete, deploy, bulk), API rate limiting, SQL dependency detection limits, graphical view constraints, and cross-space limitations.
 
 ## How to Use
 
