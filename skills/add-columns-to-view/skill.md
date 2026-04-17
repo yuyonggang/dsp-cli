@@ -22,7 +22,7 @@ The operation is **idempotent**: running it twice will not add duplicates. Each 
 ## Parameters
 
 - `--name` (required): Technical name of the existing view
-- `--space` (optional): Space ID (default: `SAP_CONTENT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--columns` (required): Column definitions, semicolon-separated
   - Format: `NAME:TYPE:LENGTH:LABEL`
   - Example: `OperatingConcern:cds.String:4:Operating Concern;DefaultProfitCenter:cds.String:10:Default Profit Center`
@@ -39,7 +39,7 @@ The `TYPE` field accepts CDS types directly or shorthand:
 ## Examples
 
 ```
-/add-columns-to-view --name SAP_FI_IL_AT_ControllingArea --space SAP_CONTENT \
+/add-columns-to-view --name MY_VIEW \
   --columns "OperatingConcern:cds.String:4:Operating Concern;DefaultProfitCenter:cds.String:10:Default Profit Center"
 ```
 

@@ -16,7 +16,7 @@ Creates a view in the specified Datasphere space using CDS (Core Data Services) 
 
 - `--name` (required): Technical name of the view (e.g., `MY_VIEW`)
 - `--source` (required): Source table or view name to query from
-- `--space` (optional): Space ID (default: `SAP_SCT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--label` (optional): User-friendly label for the view
 - `--columns` (optional): Comma-separated list of columns to select (default: all columns from source)
   - Format: `COLUMN1,COLUMN2,COLUMN3`
@@ -29,7 +29,7 @@ Creates a view in the specified Datasphere space using CDS (Core Data Services) 
 
 ### Example 1: Simple view selecting all columns
 ```
-/create-view --name CUSTOMER_VIEW --source CUSTOMER_TABLE --space SAP_SCT
+/create-view --name CUSTOMER_VIEW --source CUSTOMER_TABLE --space YOUR_SPACE_ID
 ```
 
 ### Example 2: View with specific columns

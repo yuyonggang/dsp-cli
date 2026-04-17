@@ -5,6 +5,7 @@ secrets.json
 *.log
 .DS_Store
 cache/
+.cache/
 .datasphere-cli/
 
 # Claude Code local settings (may contain project-specific paths)

@@ -6,13 +6,30 @@ This project creates SAP Datasphere objects (tables, views, analytic models, flo
 
 ```
 skills/
+  # ── Create objects ──────────────────────────────────────────
   create-local-table/       # Local tables (fact or dimension)
   create-view/              # Graphical views with associations
   create-analytic-model/    # Analytic models with measures
+  create-model/             # Full model orchestrator (dims → fact → view → AM in one command)
   add-columns-to-view/      # Add columns to existing graphical views
   create-data-flow/
   create-replication-flow/
   create-transformation-flow/
+
+  # ── Inspect objects ─────────────────────────────────────────
+  list-objects/             # List all objects of a type in a space
+  read-object/              # Read and pretty-print any object's definition
+  describe-model/           # Traverse full model chain (AM → view → fact → dims)
+  find-dependents/          # Find all views/AMs that reference a given table or view
+  impact-analysis/          # Full recursive dependency graph + column gap analysis (single scan, cached)
+
+  # ── Modify objects ──────────────────────────────────────────
+  rename-column/            # Rename a column in a view + cascade to analytic models
+  remove-column/            # Remove a column from a view + cascade to analytic models
+
+  # ── Lifecycle ───────────────────────────────────────────────
+  export-model/             # Export full model chain to local JSON files
+
 docs/claude-memory/         # Best practices and proven workflows
 ```
 
@@ -25,7 +42,10 @@ Credentials are read from `.env` (never commit this file):
 DATASPHERE_HOST=https://your-tenant.datasphere.cloud.sap
 CLIENT_ID=your_client_id
 CLIENT_SECRET=your_client_secret
+SPACE=YOUR_SPACE_ID
 ```
+
+`SPACE` is the default space ID used by all skills when `--space` is not provided. Define it once here; never hardcode it in skill invocations.
 
 ## Naming Conventions
 
@@ -51,6 +71,8 @@ Always follow this sequence when building a complete data model:
 - For graphical views: generate `DimensionNode`, `Association`, `ElementMapping` — but do **NOT** generate `EntitySymbol` or `AssociationSymbol` (Datasphere auto-generates these; partial symbols cause display issues)
 - `--dimensions` parameter uses semicolons to separate multiple associations: `"FK:DIM_TABLE:JOIN_KEY;FK2:DIM2:KEY2"`
 - Analytic model auto-detects dimensions when the source view already has associations defined
+- **SQL/table-function views** store their dependencies as raw SQL in `@DataWarehouse.tableFunction.script`, not in `query.SELECT.from`. Both `find-dependents` and `impact-analysis` parse `FROM "X"` / `JOIN "X"` patterns in these scripts to detect dependencies that CSN metadata alone would miss.
+- **Graphical views with JOINs** have a nested `from` clause (`{join: "left", args: [...]}` with sub-SELECTs) instead of a simple `{ref: [...]}`. Both skills recursively walk the `from` tree to extract all source refs.
 
 ## Modifying Existing Graphical Views
 

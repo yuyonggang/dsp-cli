@@ -14,13 +14,25 @@ import os from "os";
 import path from "path";
 
 const HOST = process.env.DATASPHERE_HOST;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 // ─── Argument parsing ─────────────────────────────────────────────────────────
+
+function validateEnvironment() {
+  const missing = Object.entries({ DATASPHERE_HOST: HOST, CLIENT_ID, CLIENT_SECRET, SPACE: process.env.SPACE })
+    .filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length > 0) {
+    console.error("Missing required environment variables:", missing.join(", "));
+    if (missing.includes("SPACE")) console.error("  → Set SPACE=<your-space-id> in .env");
+    process.exit(1);
+  }
+}
 
 function parseArgs(args) {
   const params = {
     name: null,
-    space: "SAP_CONTENT",
+    space: process.env.SPACE,
     columns: null,
     insertBefore: null,
     noDeploy: false,
@@ -117,6 +129,7 @@ function nodeColNames(node) {
 // ─── Main logic ───────────────────────────────────────────────────────────────
 
 async function addColumnsToView(params) {
+  validateEnvironment();
   const newCols = parseColumns(params.columns);
   console.log(`\nAdding ${newCols.length} column(s) to ${params.name} in space ${params.space}`);
   console.log("Columns:", newCols.map(c => c.name).join(", "));

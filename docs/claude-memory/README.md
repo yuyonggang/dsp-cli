@@ -15,6 +15,9 @@ These files serve as:
 ### [MEMORY.md](MEMORY.md)
 Index file that organizes all memory entries by type.
 
+### [references.md](references.md)
+Official SAP Help Portal and community links, organized by topic (CLI, authentication, general docs, support). Start here when you need to look something up or write a new skill.
+
 ### [workflow_guide.md](workflow_guide.md)
 **Complete workflow** for creating data models with series numbering.
 

@@ -18,6 +18,7 @@ function validateEnvironment() {
     DATASPHERE_HOST: HOST,
     CLIENT_ID: CLIENT_ID,
     CLIENT_SECRET: CLIENT_SECRET,
+    SPACE: process.env.SPACE,
   };
 
   const missing = Object.entries(required)
@@ -27,6 +28,7 @@ function validateEnvironment() {
   if (missing.length > 0) {
     console.error("❌ Missing required environment variables:");
     missing.forEach(key => console.error(`   - ${key}`));
+    if (missing.includes("SPACE")) console.error("  → Set SPACE=<your-space-id> in .env");
     console.error("\n💡 Please set these in your .env file or environment");
     process.exit(1);
   }
@@ -43,7 +45,7 @@ function parseArgs(args) {
     sourceConnection: "$DWC", // Default to internal connection
     targetConnection: null,
     targetContainer: "/DWC_GLOBAL",
-    space: "SAP_SCT",
+    space: process.env.SPACE,
     label: null,
     loadType: "INITIAL", // INITIAL or DELTA
     truncate: false,
@@ -101,7 +103,7 @@ async function authenticate() {
     "--force": true,
   });
 
-  await commands["config cache init"]({ "--host": HOST });
+  try { await commands["config cache init"]({ "--host": HOST }); } catch { /* non-blocking */ }
 
   return await getCommands(HOST);
 }

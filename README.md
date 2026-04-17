@@ -4,15 +4,16 @@ Natural language interface for SAP Datasphere artifact creation using Claude Cod
 
 ## Features
 
-- **Natural Language Processing**: Create Datasphere artifacts using plain English descriptions
-- **Six Artifact Types**: Local Tables, Views, Analytic Models, Data Flows, Replication Flows, Transformation Flows
+- **Natural Language Processing**: Create and manage Datasphere artifacts using plain English descriptions
+- **16 Skills**: Create, inspect, modify, analyze, and export Datasphere objects
 - **Complex Model Support**: Automatically handle dimension associations, measure definitions, and business layer configurations
+- **Impact Analysis**: Full dependency graph traversal with column gap detection
 - **CLI Integration**: Built on SAP's official `@sap/datasphere-cli` package
 - **Reverse Engineering**: Learn artifact formats by analyzing existing Datasphere objects
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v20 or higher)
 - SAP Datasphere tenant with OAuth 2.0 client configured
 - Claude Code CLI
 
@@ -36,11 +37,10 @@ cp .env.example .env
 
 Edit `.env` with your Datasphere credentials:
 ```
-DATASPHERE_HOST=https://your-tenant.datasphere.cloud.sap
-CLIENT_ID=your_client_id
-CLIENT_SECRET=your_client_secret
-AUTHORIZATION_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/authorize
-TOKEN_URL=https://your-tenant.authentication.sap.hana.ondemand.com/oauth/token
+DATASPHERE_HOST=https://your-tenant.eu10.hcs.cloud.sap
+CLIENT_ID=your-client-id
+CLIENT_SECRET=your-client-secret
+SPACE=YOUR_SPACE_ID
 ```
 
 ## OAuth 2.0 Configuration
@@ -166,6 +166,178 @@ Creates a transformation flow with custom logic.
 /create-transformation-flow --name FLOW_NAME --source SOURCE_NAME --target TARGET_NAME [--space SPACE_ID] [--label LABEL]
 ```
 
+---
+
+### create-model
+
+Orchestrates full data model creation in a single command: dimension tables, fact table, view with associations, and analytic model.
+
+**Syntax:**
+```bash
+/create-model --series NNN [--fact-name NAME] [--fact-columns COLS] [--dimensions SPEC] [--view-name NAME] [--model-name NAME] [--label LABEL] [--space SPACE_ID]
+```
+
+**Dimensions Format:** `DIM_TABLE:FK_COL:JOIN_KEY:ATTR1,ATTR2` (semicolon-separated for multiple)
+
+**Example:**
+```bash
+/create-model --series 001 \
+  --fact-name SALES_FACT_001 \
+  --fact-columns "ORDER_ID:String:10:key,CUSTOMER_ID:String:10,AMOUNT:Decimal:15:2" \
+  --dimensions "DIM_CUSTOMER_001:CUSTOMER_ID:ID:NAME,CITY;DIM_PRODUCT_001:PRODUCT_ID:ID:NAME,CATEGORY" \
+  --view-name SALES_VW_001 \
+  --model-name AM_SALES_001
+```
+
+---
+
+### add-columns-to-view
+
+Adds columns to an existing graphical view, keeping it in Graphical View Builder mode.
+
+**Syntax:**
+```bash
+/add-columns-to-view --name VIEW_NAME --columns COLUMN_DEFS [--space SPACE_ID] [--insert-before COL] [--no-deploy]
+```
+
+**Column Format:** `NAME:TYPE:LENGTH:LABEL` (semicolon-separated)
+
+**Example:**
+```bash
+/add-columns-to-view --name MY_VIEW \
+  --columns "NEW_COL:cds.String:10:New Column;AMOUNT:cds.Decimal:15:Amount"
+```
+
+---
+
+### rename-column
+
+Renames a column in a view and cascades the rename to all dependent analytic models.
+
+**Syntax:**
+```bash
+/rename-column --object VIEW_NAME --old-name OLD_COL --new-name NEW_COL [--space SPACE_ID]
+```
+
+**Example:**
+```bash
+/rename-column --object SALES_VW_001 --old-name CUST_ID --new-name CUSTOMER_ID
+```
+
+---
+
+### remove-column
+
+Removes a column from a view and cascades the removal to all dependent analytic models.
+
+**Syntax:**
+```bash
+/remove-column --object VIEW_NAME --column COL_NAME [--space SPACE_ID]
+```
+
+**Example:**
+```bash
+/remove-column --object SALES_VW_001 --column LEGACY_CODE
+```
+
+---
+
+### list-objects
+
+Lists all objects of a given type in a Datasphere space.
+
+**Syntax:**
+```bash
+/list-objects [--type TYPE] [--space SPACE_ID]
+```
+
+**Types:** `table`, `view`, `analytic-model`, `data-flow`, `replication-flow`, `transformation-flow`, `all`
+
+**Example:**
+```bash
+/list-objects --type view
+```
+
+---
+
+### read-object
+
+Reads and displays the definition of an existing Datasphere object.
+
+**Syntax:**
+```bash
+/read-object --name OBJECT_NAME --type TYPE [--space SPACE_ID] [--raw]
+```
+
+**Example:**
+```bash
+/read-object --name SALES_VW_001 --type view
+```
+
+---
+
+### describe-model
+
+Traverses the full dependency chain of an analytic model or view and prints a summary.
+
+**Syntax:**
+```bash
+/describe-model --name MODEL_NAME [--space SPACE_ID]
+```
+
+**Example:**
+```bash
+/describe-model --name AM_SALES_001
+```
+
+---
+
+### find-dependents
+
+Finds all views and analytic models that reference a given table or view.
+
+**Syntax:**
+```bash
+/find-dependents --name TABLE_OR_VIEW [--space SPACE_ID]
+```
+
+**Example:**
+```bash
+/find-dependents --name SALES_FACT_001
+```
+
+---
+
+### impact-analysis
+
+Builds a full dependency graph in a single scan and traverses it to show the complete impact chain. Optionally detects missing columns in downstream objects.
+
+**Syntax:**
+```bash
+/impact-analysis --name OBJECT_NAME [--space SPACE_ID] [--direction downstream|upstream|both] [--columns col1,col2] [--cache] [--refresh]
+```
+
+**Example:**
+```bash
+/impact-analysis --name MY_SOURCE_TABLE --direction downstream --columns NEW_COL --cache
+```
+
+---
+
+### export-model
+
+Exports the full CSN definitions of a data model and all its dependencies to local JSON files.
+
+**Syntax:**
+```bash
+/export-model --name MODEL_NAME [--space SPACE_ID] [--output-dir PATH]
+```
+
+**Example:**
+```bash
+/export-model --name AM_SALES_001 --output-dir ./backups/sales-model
+```
+
 ## Natural Language Usage
 
 Instead of memorizing command syntax, describe your requirements in plain English:
@@ -199,16 +371,24 @@ Claude Code will automatically:
 ```
 dsp-cli/
 ├── docs/
-│   └── claude-memory/          # Best practices and workflow examples
+│   └── claude-memory/             # Best practices and workflow examples
 ├── skills/
-│   ├── create-local-table/
-│   │   ├── create-local-table.js
-│   │   └── skill.md
-│   ├── create-view/
-│   ├── create-analytic-model/
+│   ├── create-local-table/        # Local tables (fact or dimension)
+│   ├── create-view/               # Graphical views with associations
+│   ├── create-analytic-model/     # Analytic models with measures
+│   ├── create-model/              # Full model orchestrator (dims + fact + view + AM)
 │   ├── create-data-flow/
 │   ├── create-replication-flow/
-│   └── create-transformation-flow/
+│   ├── create-transformation-flow/
+│   ├── add-columns-to-view/       # Add columns to existing graphical views
+│   ├── rename-column/             # Rename column + cascade to analytic models
+│   ├── remove-column/             # Remove column + cascade to analytic models
+│   ├── list-objects/              # List all objects of a type in a space
+│   ├── read-object/               # Read and pretty-print any object definition
+│   ├── describe-model/            # Traverse full model chain (AM → view → fact → dims)
+│   ├── find-dependents/           # Find all views/AMs referencing a table or view
+│   ├── impact-analysis/           # Full recursive dependency graph + column gap analysis
+│   └── export-model/              # Export full model chain to local JSON files
 ├── .env.example
 ├── package.json
 └── README.md

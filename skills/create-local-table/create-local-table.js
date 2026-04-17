@@ -16,6 +16,7 @@ function validateEnvironment() {
     DATASPHERE_HOST: HOST,
     CLIENT_ID: CLIENT_ID,
     CLIENT_SECRET: CLIENT_SECRET,
+    SPACE: process.env.SPACE,
   };
 
   const missing = Object.entries(required)
@@ -25,6 +26,7 @@ function validateEnvironment() {
   if (missing.length > 0) {
     console.error("❌ Missing required environment variables:");
     missing.forEach(key => console.error(`   - ${key}`));
+    if (missing.includes("SPACE")) console.error("  → Set SPACE=<your-space-id> in .env");
     console.error("\n💡 Please set these in your .env file or environment");
     process.exit(1);
   }
@@ -36,7 +38,7 @@ function validateEnvironment() {
 function parseArgs(args) {
   const params = {
     name: null,
-    space: "SAP_SCT",
+    space: process.env.SPACE,
     label: null,
     columns: null,
     dimension: false,
@@ -162,7 +164,7 @@ async function authenticate() {
     "--force": true,
   });
 
-  await commands["config cache init"]({ "--host": HOST });
+  try { await commands["config cache init"]({ "--host": HOST }); } catch { /* non-blocking */ }
 
   return await getCommands(HOST);
 }
@@ -262,7 +264,7 @@ async function main() {
     console.log("\nUsage: node create-local-table.js --name TABLE_NAME [--space SPACE_ID] [--label LABEL] [--columns COLUMN_DEFS] [--dimension]");
     console.log("\nOptions:");
     console.log("  --name          Table name (required)");
-    console.log("  --space         Space ID (default: SAP_SCT)");
+    console.log("  --space         Space ID (default: $SPACE from .env)");
     console.log("  --label         User-friendly label");
     console.log("  --columns       Column definitions: NAME:TYPE:LENGTH[:key]");
     console.log("  --dimension     Mark as analytical dimension table");

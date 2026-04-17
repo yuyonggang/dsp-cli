@@ -16,7 +16,7 @@ Creates an analytic model in the specified Datasphere space. Analytic models are
 
 - `--name` (required): Technical name of the analytic model (e.g., `AM_SALES`)
 - `--source` (required): Source view/table to use as fact source
-- `--space` (optional): Space ID (default: `SAP_SCT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--label` (optional): User-friendly label for the model
 - `--attributes` (optional): Comma-separated list of attribute columns (dimensions)
 - `--measures` (optional): Comma-separated list of measure columns (facts to aggregate)
@@ -30,7 +30,7 @@ Creates an analytic model in the specified Datasphere space. Analytic models are
 
 ### Example 1: Simple analytic model
 ```
-/create-analytic-model --name AM_SALES_ANALYSIS --source SALES_VIEW --space SAP_SCT
+/create-analytic-model --name AM_SALES_ANALYSIS --source SALES_VIEW --space YOUR_SPACE_ID
 ```
 
 ### Example 2: With specific attributes and measures
