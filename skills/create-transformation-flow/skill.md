@@ -17,7 +17,7 @@ Creates a transformation flow in the specified Datasphere space. Transformation 
 - `--name` (required): Technical name of the transformation flow (e.g., `TF_SALES_TRANSFORM`)
 - `--source` (required): Source view or table name
 - `--target` (required): Target table name
-- `--space` (optional): Space ID (default: `SAP_SCT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--label` (optional): User-friendly label for the flow
 - `--sql` (optional): Inline SQL transformation (simple transformations)
 - `--sql-file` (optional): Path to file containing SQL transformation
@@ -26,7 +26,7 @@ Creates a transformation flow in the specified Datasphere space. Transformation 
 
 ### Example 1: Simple transformation flow (copy all columns)
 ```
-/create-transformation-flow --name TF_CUSTOMER_CLEAN --source CUSTOMER_RAW --target CUSTOMER_CLEAN --space SAP_SCT
+/create-transformation-flow --name TF_CUSTOMER_CLEAN --source CUSTOMER_RAW --target CUSTOMER_CLEAN --space YOUR_SPACE_ID
 ```
 
 ### Example 2: With inline SQL transformation
