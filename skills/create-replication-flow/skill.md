@@ -20,7 +20,7 @@ Creates a replication flow in the specified Datasphere space. Replication flows 
 - `--target-connection` (optional): Target connection ID (required if replicating to external system)
 - `--source-connection` (optional): Source connection ID (default: `$DWC` for internal)
 - `--target-container` (optional): Target container path (default: `/DWC_GLOBAL`)
-- `--space` (optional): Space ID (default: `SAP_SCT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--label` (optional): User-friendly label for the flow
 - `--load-type` (optional): Load type - `INITIAL` or `DELTA` (default: `INITIAL`)
 - `--truncate` (optional): Truncate target before load (flag, default: false)
@@ -29,7 +29,7 @@ Creates a replication flow in the specified Datasphere space. Replication flows 
 
 ### Example 1: Simple replication from view to table
 ```
-/create-replication-flow --name RF_CUSTOMER_REPL --source TEST_VIEW_YYG --target TARGET_TABLE_RF_TEST --target-connection MY_HANA_CONN --space SAP_SCT
+/create-replication-flow --name RF_CUSTOMER_REPL --source TEST_VIEW_YYG --target TARGET_TABLE_RF_TEST --target-connection MY_HANA_CONN --space YOUR_SPACE_ID
 ```
 
 ### Example 2: With delta load and truncate

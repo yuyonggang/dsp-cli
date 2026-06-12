@@ -188,3 +188,35 @@ Check that:
 - Foreign key column names match in fact table and view
 - Referenced dimension table exists
 - Key column exists in dimension table
+
+## Analyzing Existing Data Models
+
+Beyond creating objects, you can explore, analyze, and modify existing models.
+
+### Quick overview
+
+```
+"List all views in this space"
+"Read the definition of SALES_VW_001"
+"Describe the model AM_SALES_001"
+```
+
+### Dependency analysis
+
+```
+"Find all objects that depend on MY_SOURCE_TABLE"
+"Run an impact analysis on MY_SOURCE_TABLE with caching"
+"Check if NEW_COLUMN propagates to all downstream objects of MY_VIEW"
+```
+
+### Modifying objects
+
+```
+"Add a column REGION (String, length 50) to view SALES_VW_001"
+"Rename column CUST_ID to CUSTOMER_ID in SALES_VW_001"
+"Remove column LEGACY_CODE from SALES_VW_001"
+```
+
+For the full workflow with detailed examples, see the [Analysis Guide](claude-memory/analysis_guide.md).
+
+For known limitations and unsupported features, see [Known Limitations](claude-memory/known_limitations.md).

@@ -17,7 +17,7 @@ Creates a simple data flow in the specified Datasphere space. Data flows are ETL
 - `--name` (required): Technical name of the data flow (e.g., `DF_SALES_ETL`)
 - `--source` (required): Source view or table name
 - `--target` (required): Target table name
-- `--space` (optional): Space ID (default: `SAP_SCT`)
+- `--space` (optional): Space ID (default: `$SPACE` from `.env`)
 - `--label` (optional): User-friendly label for the flow
 - `--mode` (optional): Load mode - `truncate`, `append`, or `upsert` (default: `truncate`)
 
@@ -25,7 +25,7 @@ Creates a simple data flow in the specified Datasphere space. Data flows are ETL
 
 ### Example 1: Simple data flow (truncate and load)
 ```
-/create-data-flow --name DF_CUSTOMER_ETL --source CUSTOMER_VIEW --target CUSTOMER_TARGET --space SAP_SCT
+/create-data-flow --name DF_CUSTOMER_ETL --source CUSTOMER_VIEW --target CUSTOMER_TARGET --space YOUR_SPACE_ID
 ```
 
 ### Example 2: Append mode
